@@ -711,6 +711,10 @@
               🔓 500원 결제하고 종합 결과 보기
             </button>
           </div>
+          <div style="font-size: 0.75rem; color: #B45309; margin-top: 10px; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+            ⚠️ 데모 모드의 잠금 해제 토큰은 브라우저(localStorage)에만 저장되며 실제 결제 인증이 아닙니다(조작 가능).
+            실서비스는 서버 결제 승인 검증 후 열람권을 발급해야 합니다 — README 「결제 연동 가이드」 참고.
+          </div>
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px;">
             🔒 실명 및 개인정보(PII)는 유료 종합 결과에도 100% 동일한 비전송·마스킹 원칙이 적용됩니다.
           </div>
@@ -943,19 +947,31 @@
       let rawSpeaker = "";
       let content = "";
 
-      // 첫 ' : '(공백-콜론-공백) 기준 우선, 없으면 마지막 콜론 폴백
+      // 첫 ' : '(공백-콜론-공백) 기준 우선, 없으면 왼쪽 스캔 폴백
       const firstSpacedColon = rest.indexOf(" : ");
       if (firstSpacedColon !== -1) {
         rawSpeaker = rest.substring(0, firstSpacedColon).trim();
         content = rest.substring(firstSpacedColon + 3);
       } else {
-        const lastColon = rest.lastIndexOf(":");
-        if (lastColon !== -1) {
-          rawSpeaker = rest.substring(0, lastColon).trim();
-          content = rest.substring(lastColon + 1).trim();
+        // 공백 없는 헤더 폴백: URL 스킴(://) 콜론을 건너뛰고, 화자 후보에 URL이
+        // 없으면서 1~30자인 첫 콜론에서만 분리한다(본문 URL·문장 콜론 오분리 방지)
+        let colonIdx = -1;
+        for (let i = 0; i < rest.length; i++) {
+          if (rest[i] !== ":") continue;
+          if (rest.slice(i + 1, i + 3) === "//") continue;
+          const candidate = rest.substring(0, i).trim();
+          if (candidate.length > 0 && candidate.length <= 30 && !candidate.includes("://")) {
+            colonIdx = i;
+            break;
+          }
+        }
+        if (colonIdx !== -1) {
+          rawSpeaker = rest.substring(0, colonIdx).trim();
+          content = rest.substring(colonIdx + 1).trim();
         } else {
-          rawSpeaker = rest.trim();
-          content = "";
+          // 신뢰할 수 있는 화자 경계가 없으면 메시지 헤더로 인정하지 않는다
+          // (여러 줄 본문으로 처리)
+          return null;
         }
       }
 
@@ -1317,10 +1333,37 @@
       if (maskedPreviewWrapper) maskedPreviewWrapper.style.display = "none";
       if (reportSection) reportSection.style.display = "none";
 
+      // 리포트·근거카드·지표·축 바·canvas까지 실제로 비운다(숨겨진 DOM·픽셀 잔류 제거)
+      const resetTextIds = [
+        "mbtiTypeDisplay", "mbtiPersonaDisplay", "mbtiTargetDisplay",
+        "metricMsgCount", "metricAvgLen", "metricInitiateRate",
+        "metricAvgLatency", "metricLaughDensity", "metricEmojiDensity",
+        "valE", "valI", "valS", "valN", "valT", "valF", "valJ", "valP",
+        "evidenceE", "evidenceS", "evidenceT", "evidenceJ",
+        "statusE", "statusS", "statusT", "statusJ", "overallConfidenceBadge"
+      ];
+      resetTextIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.textContent = "";
+          el.className = "";
+          if (el.style) el.style.width = "";
+        }
+      });
+      const typeDisplay = document.getElementById("mbtiTypeDisplay");
+      if (typeDisplay && typeDisplay.style) typeDisplay.style.color = "";
+      const quoteGrid = document.getElementById("quoteCardsGrid");
+      if (quoteGrid) quoteGrid.innerHTML = "";
+      if (shareCanvas) {
+        const ctx = shareCanvas.getContext ? shareCanvas.getContext("2d") : null;
+        if (ctx && shareCanvas.width) ctx.clearRect(0, 0, shareCanvas.width, shareCanvas.height);
+      }
+
       // 종합 결과 잠금 뷰 복귀 및 컨텐츠 초기화 (이전 실명·결과 UI 잔류 방지)
       if (paywallLockedView) paywallLockedView.style.display = "block";
       if (paywallUnlockedView) paywallUnlockedView.style.display = "none";
       if (deepMbtiAnalysisBox) deepMbtiAnalysisBox.innerHTML = "";
+      if (paywallExpiryNotice) paywallExpiryNotice.textContent = "";
     }
 
     // 페이월 토큰 관리 헬퍼 (localStorage 24시간 만료)
@@ -1332,6 +1375,12 @@
         const token = JSON.parse(raw);
         if (!token || typeof token.expiresAt !== "number") return null;
         if (Date.now() > token.expiresAt) {
+          localStorage.removeItem(STORAGE_PAYWALL_TOKEN_KEY);
+          return null;
+        }
+        // 금액·플래그 검증: 위조·변조 토큰은 무효로 취급한다
+        // (주의: 클라이언트 저장 토큰은 근본적으로 조작 가능 — 실서비스는 서버 승인 검증 필요, README 참고)
+        if (token.unlocked !== true || token.amount !== PAYWALL_PRICE) {
           localStorage.removeItem(STORAGE_PAYWALL_TOKEN_KEY);
           return null;
         }
@@ -1429,12 +1478,29 @@
       `;
     }
 
-    // 파일 업로드 처리 함수 (accept='.txt', 1MB 제한, FileReader)
-    function handleChatFileUpload(file) {
-      if (!file) return false;
+    // 파일 검증 순수 함수 (확장자·MIME·크기·빈 파일 가드)
+    function validateChatFile(file) {
+      if (!file) return { ok: false, reason: "파일이 선택되지 않았습니다." };
       const MAX_FILE_SIZE = 1024 * 1024; // 1MB
       if (file.size > MAX_FILE_SIZE) {
-        alert("1MB를 초과하는 파일은 업로드할 수 없습니다.");
+        return { ok: false, reason: "1MB를 초과하는 파일은 업로드할 수 없습니다." };
+      }
+      const nameOk = typeof file.name === "string" && file.name.toLowerCase().endsWith(".txt");
+      const typeOk = typeof file.type === "string" && (file.type === "text/plain" || file.type === "");
+      if (!nameOk || !typeOk) {
+        return { ok: false, reason: "텍스트(.txt) 파일만 업로드할 수 있습니다." };
+      }
+      if (file.size === 0) {
+        return { ok: false, reason: "빈 파일은 업로드할 수 없습니다." };
+      }
+      return { ok: true, reason: "" };
+    }
+
+    // 파일 업로드 처리 함수 (accept='.txt' + 검증, 1MB 제한, FileReader 오류 처리)
+    function handleChatFileUpload(file) {
+      const validation = validateChatFile(file);
+      if (!validation.ok) {
+        alert(validation.reason);
         return false;
       }
 
@@ -1448,7 +1514,18 @@
           rawChatInput.value = text;
           onChatTextChange();
         };
-        reader.readAsText(file, "utf-8");
+        reader.onerror = function() {
+          alert("파일을 읽는 중 오류가 발생했습니다. 다시 시도해주세요.");
+        };
+        reader.onabort = function() {
+          alert("파일 읽기가 중단되었습니다.");
+        };
+        try {
+          reader.readAsText(file, "utf-8");
+        } catch (err) {
+          alert("파일을 읽는 중 오류가 발생했습니다: " + (err && err.message ? err.message : err));
+          return false;
+        }
       }
       return true;
     }
@@ -1527,7 +1604,7 @@
     if (btnUnlockPaywall) {
       btnUnlockPaywall.addEventListener("click", () => {
         if (TOSS_PAYMENTS_CLIENT_KEY) {
-          // 실제 토스페이먼츠 연동 분기
+          // 실제 토스페이먼츠 연동 분기 — 키가 설정되어 있으면 데모 폴백 금지(결제 우회 방지)
           if (typeof window !== "undefined" && typeof window.TossPayments === "function") {
             const tossPayments = window.TossPayments(TOSS_PAYMENTS_CLIENT_KEY);
             tossPayments.requestPayment("카드", {
@@ -1539,9 +1616,12 @@
             }).catch(err => alert("결제 실패: " + err.message));
             return;
           }
+          // 키가 있지만 SDK 미로딩: 결제 없이 유료 콘텐츠를 열어주지 않는다
+          alert("결제 연동 오류: 결제 SDK가 아직 로딩되지 않았습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.");
+          return;
         }
 
-        // 데모 모드 분기 (TOSS_PAYMENTS_CLIENT_KEY가 비어 있는 경우 즉시 unlock)
+        // 데모 모드 분기 (TOSS_PAYMENTS_CLIENT_KEY가 비어 있을 때만 도달)
         savePaywallToken();
         if (parsedData) {
           const targetMsgs = parsedData.messages.filter(m => m.isTarget);
@@ -1551,7 +1631,7 @@
         } else {
           renderPaywallUI(null);
         }
-        alert("데모 모드: 500원 결제가 성공적으로 시뮬레이션되어 'MBTI+사주 종합 결과 보기'가 24시간 동안 잠금 해제되었습니다.");
+        alert("데모 모드: 500원 결제가 시뮬레이션되어 'MBTI+사주 종합 결과 보기'가 24시간 동안 잠금 해제되었습니다.\n(데모 토큰은 브라우저에만 저장되며 실제 결제 증빙이 아닙니다)");
       });
     }
 
@@ -1885,6 +1965,7 @@
       globalThis.renderPaywallUI = renderPaywallUI;
       globalThis.renderDeepMbtiAnalysis = renderDeepMbtiAnalysis;
       globalThis.handleChatFileUpload = handleChatFileUpload;
+      globalThis.validateChatFile = validateChatFile;
       globalThis.resetAnalysisState = resetAnalysisState;
       globalThis.onChatTextChange = onChatTextChange;
     }
@@ -1912,6 +1993,7 @@
         renderPaywallUI,
         renderDeepMbtiAnalysis,
         handleChatFileUpload,
+        validateChatFile,
         resetAnalysisState,
         onChatTextChange
       };

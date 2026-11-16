@@ -284,8 +284,8 @@ console.log('PASS: P1 textarea 변경 시 즉시 초기화 및 실명 잔류 0�
 
 console.log('--- Test Suite 8: 신기능 1 파일 업로드 (accept=".txt", 1MB 가드) 검증 ---');
 // 1MB = 1024 * 1024 = 1,048,576 bytes
-const largeFile = { size: 1024 * 1024 + 10, name: 'large_chat.txt' };
-const validFile = { size: 1024 * 50, name: 'normal_chat.txt' };
+const largeFile = { size: 1024 * 1024 + 10, name: 'large_chat.txt', type: 'text/plain' };
+const validFile = { size: 1024 * 50, name: 'normal_chat.txt', type: 'text/plain' };
 
 const largeResult = handleChatFileUpload(largeFile);
 assert.strictEqual(largeResult, false, '1MB 초과 파일은 거부되어야 합니다.');
@@ -325,5 +325,52 @@ mockLocalStorage.setItem(STORAGE_PAYWALL_TOKEN_KEY, JSON.stringify({
 assert.strictEqual(checkPaywallUnlocked(), false, '만료된 토큰은 잠금 해제로 인정되지 않고 자동 제거되어야 합니다.');
 assert.strictEqual(mockLocalStorage.getItem(STORAGE_PAYWALL_TOKEN_KEY), null, '만료된 토큰은 localStorage에서 삭제되어야 합니다.');
 console.log('PASS: 신기능 2 페이월 상태 전환 및 유료 실명 은닉 통과');
+
+console.log('--- Test Suite 10: Luna R3 findings 회귀 (콜론 폴백·파일 검증·토큰 위조·리셋 잔류) 검증 ---');
+
+// 10-1. 공백 없는 헤더의 콜론 폴백: 본문 URL·문장 콜론이 화자명으로 오분리되지 않음
+const colonHeader = splitHeaderAndContent('[오후 3:12] 김철수: 보고서 https://x.com:8080/a 확인 부탁해: 오늘까지');
+assert.strictEqual(colonHeader.rawSpeaker, '김철수', '공백 없는 헤더에서도 첫 유효 콜론 앞까지가 화자여야 합니다.');
+assert(colonHeader.content.includes('https://x.com:8080/a'), '본문 URL은 화자 분리에 잘리지 않고 보존되어야 합니다.');
+const urlFirstHeader = splitHeaderAndContent('[오후 3:12] 링크 https://example.com/path:80 보내요');
+assert.strictEqual(urlFirstHeader, null, 'URL이 먼저 오는 줄은 화자 경계를 신뢰할 수 없으므로 헤더로 인정하지 않습니다.');
+const normalSpacedHeader = splitHeaderAndContent('[오전 10:15] 김철수 : https://example.com 을 봐줘');
+assert.strictEqual(normalSpacedHeader.rawSpeaker, '김철수', '공백-콜론-공백 우선 분리는 유지되어야 합니다.');
+assert(normalSpacedHeader.content.startsWith('https://'), '공백-콜론-공백 분리 후 URL이 온전해야 합니다.');
+
+// 10-2. validateChatFile: 확장자·MIME·빈 파일 가드
+const { validateChatFile } = sandbox;
+assert(validateChatFile(null).ok === false, '파일이 없으면 거부합니다.');
+assert(validateChatFile({ size: 100, name: 'report.pdf', type: 'application/pdf' }).ok === false, 'PDF는 거부되어야 합니다.');
+assert(validateChatFile({ size: 100, name: 'chat.exe', type: 'application/octet-stream' }).ok === false, '바이너리는 거부되어야 합니다.');
+assert(validateChatFile({ size: 0, name: 'empty.txt', type: 'text/plain' }).ok === false, '빈 파일은 거부되어야 합니다.');
+assert(validateChatFile({ size: 100, name: 'chat.txt', type: 'application/pdf' }).ok === false, '확장자가 txt여도 MIME이 텍스트가 아니면 거부합니다.');
+assert(validateChatFile({ size: 100, name: 'chat.TXT', type: 'text/plain' }).ok === true, '대문자 .txt 확장자는 허용됩니다.');
+
+// 10-3. 위조 토큰(금액 불일치) 거부 및 자동 제거
+mockLocalStorage.clear();
+mockLocalStorage.setItem(STORAGE_PAYWALL_TOKEN_KEY, JSON.stringify({
+  unlocked: true,
+  amount: 1, // 500원이 아닌 위조 금액
+  unlockedAt: Date.now(),
+  expiresAt: Date.now() + 3600000
+}));
+assert.strictEqual(getPaywallToken(), null, '금액이 조작된 토큰은 무효화되어야 합니다.');
+assert.strictEqual(mockLocalStorage.getItem(STORAGE_PAYWALL_TOKEN_KEY), null, '위조 토큰은 localStorage에서 제거되어야 합니다.');
+assert.strictEqual(checkPaywallUnlocked(), false, '위조 토큰으로는 잠금이 해제되지 않아야 합니다.');
+
+// 10-4. 입력 변경 리셋 시 근거 카드·리포트 필드·canvas까지 실제로 비워짐 (DOM 잔류 제거)
+const prevQuoteGrid = domElements.get('quoteCardsGrid');
+prevQuoteGrid.innerHTML = '<div class="quote-card">이전 분석 근거</div>';
+const prevCanvas = domElements.get('shareCanvas');
+const prevTarget = domElements.get('mbtiTargetDisplay');
+prevTarget.textContent = '분석 대상: 나(화자A) | 총 5개 발화 분석';
+const prevEvidence = domElements.get('evidenceT');
+prevEvidence.textContent = '판단 및 의사결정 (T 성향 우세)';
+resetAnalysisState();
+assert.strictEqual(prevQuoteGrid.innerHTML, '', '입력 변경 시 근거 카드 그리드가 실제로 비워져야 합니다.');
+assert.strictEqual(prevTarget.textContent, '', '리포트 대상 필드가 비워져야 합니다.');
+assert.strictEqual(prevEvidence.textContent, '', '축별 근거 문구가 비워져야 합니다.');
+console.log('PASS: Luna R3 findings 회귀 (콜론 폴백·파일 검증·토큰 위조·리셋 잔류) 통과');
 
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
