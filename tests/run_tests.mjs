@@ -433,4 +433,31 @@ assert(colonParsed.messages[1].maskedContent.includes('참고 사항'), '본문 
 
 console.log('PASS: 입력 소스 일반화 (지피티 등 일반 대화 텍스트) 통과');
 
+console.log('--- Test Suite 12: Luna R6 회귀 (URL 레이블·빈 본문·드롭다운 감지) 검증 ---');
+
+// 12-1. URL 라인은 화자 'https'로 오인식되지 않고 본문에 온전히 흡수된다
+const r6UrlChat = '사용자: 링크 하나만 볼래?\nhttps://example.com/path:80 보내요\n사용자: 봤어 좋네';
+const r6UrlParsed = parseChatText(r6UrlChat, '사용자');
+assert(r6UrlParsed, 'URL이 포함된 일반 대화도 파싱되어야 합니다.');
+assert(!r6UrlParsed.messages.some(m => m.maskedSpeaker === 'https' || m.maskedSpeaker === 'http'), 'URL 스킴 이름이 화자가 되어서는 안 됩니다.');
+assert(r6UrlParsed.messages.some(m => m.maskedContent.includes('https://example.com')), 'URL은 본문에 온전히 남아야 합니다.');
+const speakersInUrl = new Set(r6UrlParsed.messages.map(m => m.maskedSpeaker));
+assert(!speakersInUrl.has('https'), '드롭다운에 https가 화자로 추가되어서는 안 됩니다.');
+
+// 12-2. 빈 본문 레이블('홍길동:')도 메시지로 파싱되어 원문이 마스킹 결과에 잔류하지 않는다
+const r6EmptyChat = '사용자: 자기소개 해줘\n홍길동:\nChatGPT: 홍길동이라니, 반가워요!';
+const r6EmptyParsed = parseChatText(r6EmptyChat, '사용자');
+assert(r6EmptyParsed && r6EmptyParsed.messages.length === 3, '빈 본문 레이블 줄도 메시지 경계로 인정되어야 합니다.');
+assert(r6EmptyParsed.messages.every(m => m.maskedSpeaker !== '홍길동'), '원문 레이블 화자명이 그대로 잔류하지 않아야 합니다.');
+assert(r6EmptyParsed.messages.some(m => m.maskedContent.includes('반가워요')), '본문은 보존되어야 합니다.');
+
+// 12-3. onChatTextChange가 일반 대화 화자를 드롭다운에 감지한다
+domElements.get('rawChatInput').value = '사용자: 안녕\nChatGPT: 안녕하세요!';
+onChatTextChange();
+const selectEl = domElements.get('speakerSelect');
+assert(!selectEl.innerHTML.includes('화자를 감지할 수 없습니다'), '일반 대화에서도 화자가 감지되어야 합니다.');
+assert.strictEqual(selectEl.innerHTML, '', '화자 옵션이 추가된 경우 감지 실패 문구가 남지 않아야 합니다.');
+
+console.log('PASS: Luna R6 회귀 (URL 레이블·빈 본문·드롭다운 감지) 통과');
+
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
