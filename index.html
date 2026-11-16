@@ -1942,7 +1942,9 @@
         const raw = localStorage.getItem(STORAGE_PREMIUM_KEY);
         if (!raw) return null;
         const t = JSON.parse(raw);
-        if (!t || t.paid !== true || Date.now() > t.expiresAt) { localStorage.removeItem(STORAGE_PREMIUM_KEY); return null; }
+        if (!t || t.paid !== true || t.amount !== 500 || Date.now() > t.expiresAt) { localStorage.removeItem(STORAGE_PREMIUM_KEY); return null; }
+        // 실결제 모드(키 주입)에서 데모 토큰은 무효 — 실결제 흐름에서만 유효한 토큰으로 구분
+        if (TOSS_CLIENT_KEY && t.demo) { localStorage.removeItem(STORAGE_PREMIUM_KEY); return null; }
         return t;
       } catch (e) { return null; }
     }
