@@ -524,3 +524,44 @@ if (lackMbti.isLack) {
 console.log('PASS: Codex 자문 반영 (반복 문장·부정문·부분문자열·근거 부족 단정 금지) 통과');
 
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
+
+console.log('--- Test Suite 15: v2 명식 계산·TCI·3소스 융합 (KASI 검증) 검증 ---');
+
+const { calcPillars, tenGod, tciScore, TCI_QUESTIONS } = sandbox;
+assert(typeof calcPillars === 'function', 'calcPillars가 로드되지 않았습니다.');
+
+// 15-1. KASI 검증 앵커: 2026-11-25 = 丙午年 己亥月 癸卯日 (한국천문연구원 월별 음양력)
+const p1 = calcPillars(2026, 11, 25, 12, false);
+assert.strictEqual(p1.year.gan + p1.year.ji, '丙午', '년주는 丙午여야 합니다(KASI 2026년 병오년).');
+assert.strictEqual(p1.month.gan + p1.month.ji, '己亥', '11월 월주는 己亥여야 합니다(KASI 2026-11).');
+assert.strictEqual(p1.day.gan + p1.day.ji, '癸卯', '2026-11-25 일주는 癸卯여야 합니다(KASI).');
+assert.strictEqual(p1.ruleVersion, 'v2-approx', 'ruleVersion이 기록되어야 합니다.');
+
+// 15-2. 입춘 연도 경계: 2026-01-20은 입춘 전 → 년주는 이전 해 乙巳
+const p2 = calcPillars(2026, 1, 20, 12, false);
+assert.strictEqual(p2.year.gan + p2.year.ji, '乙巳', '입춘 전 출생은 이전 해의 년주를 써야 합니다.');
+
+// 15-3. 시간 모름 → 시주 null
+const p3 = calcPillars(2026, 11, 25, null, true);
+assert.strictEqual(p3.hour, null, '시간 모름이면 시주는 제외( null )되어야 합니다.');
+
+// 15-4. 십성: 甲 기준 검증
+assert.strictEqual(tenGod(0, 1), '겁재', '甲-乙은 겁재여야 합니다.');
+assert.strictEqual(tenGod(0, 2), '식신', '甲-丙은 식신이어야 합니다.');
+assert.strictEqual(tenGod(0, 4), '편재', '甲-戊은 편재여야 합니다.');
+assert.strictEqual(tenGod(0, 6), '편관', '甲-庚은 편관이어야 합니다.');
+assert.strictEqual(tenGod(0, 8), '편인', '甲-壬은 편인이어야 합니다.');
+assert.strictEqual(tenGod(0, 9), '정인', '甲-癸은 정인이어야 합니다.');
+
+// 15-5. TCI 채점: 영역별 평균·라벨
+const tciOut = tciScore([5, 4, 1, 1, 3, 3, 4, 4, 3, 3, 3, 3]);
+assert(tciOut['새로움 추구'].score > 3, '새로움 추구는 높게 나와야 합니다.');
+assert.strictEqual(tciOut['위험 회피'].label, '낮음', '위험 회피 1점 응답은 낮음이어야 합니다.');
+assert.strictEqual(Object.keys(tciOut).length, 6, 'TCI는 6영역이어야 합니다.');
+
+// 15-6. 문항 수: 12문항·6영역×2
+assert.strictEqual(TCI_QUESTIONS.length, 12, 'TCI 문항은 12개여야 합니다.');
+
+console.log('PASS: v2 명식 계산·TCI·3소스 융합 (KASI 검증) 통과');
+
+console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');

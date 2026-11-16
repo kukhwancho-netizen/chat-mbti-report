@@ -697,13 +697,34 @@
           <!-- 동적으로 렌더링 -->
         </div>
         <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 14px;">
-          <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">
-            v2 계획
-          </h4>
           <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
-            다음 버전에서 만세력 명식 계산(사주 8자·오행·십성)과 TCI식 미니 자기보고를 더해 3소스 융합 리포트를 제공할 예정입니다.
+            아래 "사주 · TCI 3소스 종합" 카드에서 명식 계산과 미니 자기보고를 바로 진행할 수 있습니다.
           </p>
         </div>
+      </section>
+
+      <!-- v2: 사주 · TCI 3소스 종합 -->
+      <section class="card" id="v2Section">
+        <div class="card-title">
+          <span>사주 · TCI 3소스 종합 (v2)</span>
+        </div>
+        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; margin-bottom: 8px;">
+          <input type="date" id="v2BirthDate" aria-label="생년월일">
+          <input type="time" id="v2BirthTime" aria-label="출생 시간">
+          <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px;"><input type="checkbox" id="v2NoTime"> 시간 모름</label>
+          <button id="btnCalcSaju" class="btn-primary">명식 계산</button>
+        </div>
+        <div id="sajuResult"></div>
+        <div style="margin-top: 24px;">
+          <div class="card-title" style="padding: 0; margin-bottom: 10px;">
+            <span>TCI식 미니 자기보고 (12문항 · 5점 척도)</span>
+          </div>
+          <div id="tciQuestions"></div>
+          <button id="btnTciSubmit" class="btn-primary">TCI 응답 완료</button>
+          <div id="tciResult"></div>
+        </div>
+        <div id="fusionBox"></div>
       </section>
     </div>
 
@@ -1420,6 +1441,308 @@
       if (deepSection) deepSection.style.display = "none";
     }
 
+    // ===================== v2: 사주 · TCI 3소스 종합 =====================
+    // 만세력 계산 — ruleVersion "v2-approx"
+    // 한계 명시: 절기일은 평균 근사(경계일 ±1일 오차 가능), 시간대는 UTC+9 고정(역사적 시간대·서머타임 미적용),
+    // 진태양시 미적용(민간시 기준), 일자 경계는 0시 기준(야자시 다음날 취급 미적용). 정밀 명식은 KASI 데이터 기반이 필요합니다.
+    const GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+    const JI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+    const GAN_EL = ["木", "木", "火", "火", "土", "土", "金", "金", "水", "水"];
+    const JI_EL = ["水", "土", "木", "木", "土", "火", "火", "土", "金", "金", "土", "水"];
+    const TERM_DAY = { 1: 6, 2: 4, 3: 6, 4: 5, 5: 6, 6: 6, 7: 7, 8: 8, 9: 8, 10: 8, 11: 7, 12: 7 };
+
+    function jdn(y, m, d) {
+      const a = Math.floor((14 - m) / 12);
+      const yy = y + 4800 - a;
+      const mm = m + 12 * a - 3;
+      return d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
+    }
+
+    function monthBranch(y, m, d) {
+      const termDay = TERM_DAY[m];
+      return d >= termDay ? (m % 12) : ((m + 11) % 12);
+    }
+
+    function gzIndex(stemIdx, branchIdx) {
+      for (let i = branchIdx; i < 60; i += 12) {
+        if (i % 10 === stemIdx) return i;
+      }
+      return 0;
+    }
+
+    function calcPillars(y, m, d, hour, noTime) {
+      const afterIpchun = (m > 2) || (m === 2 && d >= TERM_DAY[2]);
+      const yearNum = afterIpchun ? y : y - 1;
+      const yearIdx = ((yearNum - 4) % 60 + 60) % 60;
+      const branch = monthBranch(y, m, d);
+      const yearStem = yearIdx % 10;
+      const monthStem = ((yearStem % 5) * 2 + 2 + ((branch - 2 + 12) % 12)) % 10;
+      const monthIdx = gzIndex(monthStem, branch);
+      const dayIdx = (jdn(y, m, d) + 49) % 60;
+      const dayStem = dayIdx % 10;
+      let hourIdx = null;
+      let hourBranch = null;
+      if (!noTime && hour !== null && hour !== undefined && !isNaN(hour)) {
+        hourBranch = Math.floor(((hour + 1) % 24) / 2);
+        const hourStem = ((dayStem % 5) * 2 + hourBranch) % 10;
+        hourIdx = gzIndex(hourStem, hourBranch);
+      }
+      return {
+        year: { gz: yearIdx, gan: GAN[yearIdx % 10], ji: JI[yearIdx % 12] },
+        month: { gz: monthIdx, gan: GAN[monthIdx % 10], ji: JI[branch] },
+        day: { gz: dayIdx, gan: GAN[dayIdx % 10], ji: JI[dayIdx % 12] },
+        hour: hourIdx === null ? null : { gz: hourIdx, gan: GAN[hourIdx % 10], ji: JI[hourIdx % 12] },
+        ruleVersion: "v2-approx"
+      };
+    }
+
+    function tenGod(ds, os) {
+      const dEl = GAN_EL[ds], oEl = GAN_EL[os];
+      const samePol = (ds % 2) === (os % 2);
+      if (dEl === oEl) return samePol ? "비견" : "겁재";
+      const gen = (a, b) => (a === "木" && b === "火") || (a === "火" && b === "土") || (a === "土" && b === "金") || (a === "金" && b === "水") || (a === "水" && b === "木");
+      const ke = (a, b) => (a === "木" && b === "土") || (a === "土" && b === "水") || (a === "水" && b === "火") || (a === "火" && b === "金") || (a === "金" && b === "木");
+      if (gen(dEl, oEl)) return samePol ? "식신" : "상관";
+      if (gen(oEl, dEl)) return samePol ? "편인" : "정인";
+      if (ke(dEl, oEl)) return samePol ? "편재" : "정재";
+      return samePol ? "편관" : "정관";
+    }
+
+    // 수집 콘텐츠 기반 해석 사전 (일간·오행·십성 — 전통 명리 관행을 우리 문체로 재구성)
+    const ILGAN_NOTE = [
+      "기준이 뚜렷하고 한번 정하면 밀고 가는 성장·추진형",
+      "상황에 유연하게 숙익는 실속·조율형",
+      "보여주고 이끌려는 표현·지도형",
+      "한번 꽂히면 끝까지 파고드는 집요·속도형",
+      "우직하게 밀어붙이는 대담·중진형",
+      "주변을 살피며 실익을 취하는 수완·중계형",
+      "결과가 뚜렷한 원칙·완주형",
+      "날카롭게 정리하는 전문·완성형",
+      "박학다식하게 흐르는 포용·연결형",
+      "속을 쉽게 드러내지 않는 통찰·전략형"
+    ];
+    const ELEMENT_NOTE = {
+      "木": "성장·확장 — 배우고 밀고 나가려는 힘",
+      "火": "표현·열정 — 보여주고 움직이게 만드는 힘",
+      "土": "안정·신중 — 쌓고 지키려는 힘",
+      "金": "원칙·정리 — 판단하고 끝내려는 힘",
+      "水": "사색·유연 — 생각하고 흘러가려는 힘"
+    };
+    const SIPSONG_NOTE = {
+      "비겁": "자아·경쟁 — 내 방식으로 직접 나서는 힘",
+      "식상": "표현·창의 — 말과 아이디어로 흘러나오는 힘",
+      "재성": "현실·성취 — 눈에 보이는 결과를 좇는 힘",
+      "관성": "규칙·책임 — 시스템과 원칙을 세우는 힘",
+      "인성": "학습·수용 — 흡수하고 준비하는 힘"
+    };
+
+    const TEN_GOD_GROUPS = {
+      "비견": "비겁", "겁재": "비겁",
+      "식신": "식상", "상관": "식상",
+      "편재": "재성", "정재": "재성",
+      "편관": "관성", "정관": "관성",
+      "편인": "인성", "정인": "인성"
+    };
+
+    function sajuSummary(pillars) {
+      const list = [pillars.year, pillars.month, pillars.day, pillars.hour].filter(p => p);
+      const elCount = {};
+      const tenGods = [];
+      const dayStem = pillars.day.gz % 10;
+      list.forEach(p => {
+        const gIdx = GAN.indexOf(p.gan);
+        const jIdx = JI.indexOf(p.ji);
+        elCount[GAN_EL[gIdx]] = (elCount[GAN_EL[gIdx]] || 0) + 1;
+        elCount[JI_EL[jIdx]] = (elCount[JI_EL[jIdx]] || 0) + 1;
+        tenGods.push(tenGod(dayStem, gIdx));
+      });
+      // 지지는 본기 오행으로 이미 가산 — 지장간은 v2.1 과제
+      const groupCount = {};
+      tenGods.forEach(t => { const g = TEN_GOD_GROUPS[t]; groupCount[g] = (groupCount[g] || 0) + 1; });
+      return { pillars, elCount, tenGods, groupCount, dayStem };
+    }
+
+    const btnCalcSaju = document.getElementById("btnCalcSaju");
+    const btnTciSubmit = document.getElementById("btnTciSubmit");
+    // TCI식 미니 자기보고 (TCI 6영역 착안 비표준 12문항 — 공식 TCI가 아님)
+    const TCI_QUESTIONS = [
+      { area: "새로움 추구", text: "익숙한 방법이 있어도 새로운 방식부터 건드려 본다" },
+      { area: "새로움 추구", text: "결정 전에 예감을 믿고 먼저 움직인 적이 많다" },
+      { area: "위험 회피", text: "결정 전에 잘못될 가능성을 여러 번 다시 점검한다" },
+      { area: "위험 회피", text: "바뀐 계획보다 검증된 계획이 편하다" },
+      { area: "유대 민감", text: "중요한 사람의 반응 하나에 내 기분이 달렸던 적이 많다" },
+      { area: "유대 민감", text: "채팅 반응이 늦으면 먼저 여러 가지로 해석하게 된다" },
+      { area: "인내력", text: "흥미가 식어도 정한 분량은 끝내는 편이다" },
+      { area: "인내력", text: "미뤄왔던 일도 방법을 정하면 끝까지 간다" },
+      { area: "자기지향", text: "기분과 별개로 내가 정한 우선순위를 따른다" },
+      { area: "자기지향", text: "칭찬보다 내 기준에 맞아야 뿌듯하다" },
+      { area: "협력성", text: "의견이 달라도 상대의 이유를 먼저 듣는 편이다" },
+      { area: "협력성", text: "갈등이 생기면 내가 먼저 대화를 열어 본다" }
+    ];
+
+    function tciScore(answers) {
+      const areas = {};
+      TCI_QUESTIONS.forEach((q, i) => {
+        (areas[q.area] = areas[q.area] || []).push(answers[i]);
+      });
+      const out = {};
+      Object.keys(areas).forEach(k => {
+        const avg = areas[k].reduce((a, b) => a + b, 0) / areas[k].length;
+        out[k] = { score: Math.round(avg * 10) / 10, label: avg >= 3.5 ? "높음" : avg >= 2.5 ? "보통" : "낮음" };
+      });
+      return out;
+    }
+
+    // 3소스 융합 — 상황별 주제 × 3관점 (Codex 자문 설계: 사주를 MBTI 점수에 직접 더하지 않음)
+    const FUSION_THEMES = [
+      { label: "계획을 세우고 지킬 때", axis: "JP", high: "J", low: "P", tciAreas: ["인내력", "자기지향"], sajuGroups: ["관성", "인성"] },
+      { label: "새로운 일을 시작할 때", axis: "SN", high: "N", low: "S", tciAreas: ["새로움 추구"], sajuGroups: ["식상"] },
+      { label: "관계에서 갈등이 생겼을 때", axis: "TF", high: "F", low: "T", tciAreas: ["유대 민감", "협력성"], sajuGroups: ["비겁", "재성"] }
+    ];
+
+    function fusionRow(theme, mbti, tci, saju) {
+      const axis = mbti["axis" + theme.axis];
+      const chatLine = axis.isLack
+        ? "판단 보류 — 근거 문장이 부족해요"
+        : `${axis.dominant} 쪽 관찰됨 (근거 문장 ${axis.validQuotes}개)`;
+      const tciLine = theme.tciAreas.map(a => tci[a] ? `${a}: ${tci[a].label} (${tci[a].score})` : `${a}: 미응답`).join(" · ");
+      const sajuLine = theme.sajuGroups.map(g => saju.groupCount[g] ? `${g} ${saju.groupCount[g]}개 — ${SIPSONG_NOTE[g].split(" — ")[1]}` : `${g} 없음 — ${SIPSONG_NOTE[g].split(" — ")[1]}이 약한 구조`).join(" · ");
+      const positions = [axis.dominant === theme.high ? "방향 일치" : (axis.isLack ? "보류" : "다른 관점")];
+      return {
+        label: theme.label,
+        chat: chatLine,
+        tci: tciLine,
+        saju: sajuLine,
+        agree: positions[0]
+      };
+    }
+
+    function renderFusionIfReady() {
+      const box = document.getElementById("fusionBox");
+      if (!box) return;
+      const hasMbti = v2State.mbti;
+      const hasSaju = v2State.saju;
+      const hasTci = v2State.tci;
+      if (!hasSaju && !hasTci) {
+        box.innerHTML = "";
+        return;
+      }
+      let html = "<h4 style=\"font-size: 0.95rem; font-weight: 700; margin-bottom: 10px;\">3소스 비교 — 같은 주제를 세 관점에서</h4>";
+      FUSION_THEMES.forEach(theme => {
+        const chatLine = hasMbti ? fusionRow(theme, v2State.mbti, v2State.tci, v2State.saju).chat : "대화 분석 전 — 리포트를 먼저 만들어 주세요";
+        const tciLine = hasTci ? (function () {
+          const row = fusionRow(theme, v2State.mbti || null, v2State.tci, v2State.saju);
+          return row.tci;
+        })() : "TCI 응답 대기 중";
+        const sajuLine = hasSaju && v2State.saju ? fusionRow(theme, v2State.mbti, v2State.tci, v2State.saju).saju : "명식 계산 대기 중";
+        html += `
+        <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-bottom: 12px;">
+          <div style="font-weight: 700; margin-bottom: 6px;">${theme.label}</div>
+          <div style="font-size: 0.88rem; line-height: 1.7;">
+            <div>1소스 · 대화 관찰: ${chatLine}</div>
+            <div>2소스 · 전통 해석: ${sajuLine}</div>
+            <div>3소스 · 자기보고: ${tciLine}</div>
+          </div>
+        </div>`;
+      });
+      html += "<p style=\"font-size: 0.8rem; color: var(--text-muted); line-height: 1.6;\">관점이 같더라도 정확도가 올라간 뜻은 아니며, 갈리는 주제는 성찰 포인트입니다. 모든 수치는 규칙 기반 추정치입니다.</p>";
+      box.innerHTML = html;
+    }
+
+    const v2State = { saju: null, tci: null };
+
+    function renderSaju(pillars) {
+      const box = document.getElementById("sajuResult");
+      if (!box) return;
+      const summary = sajuSummary(pillars);
+      const dayStem = pillars.day.gz % 10;
+      const totalEl = Object.values(summary.elCount).reduce((a, b) => a + b, 0);
+      let elBars = "";
+      Object.keys(ELEMENT_NOTE).forEach(el => {
+        const n = summary.elCount[el] || 0;
+        const w = Math.round((n / totalEl) * 100);
+        elBars += `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+          <span style="width: 28px; font-weight: 700;">${el}</span>
+          <div style="flex: 1; height: 10px; background: var(--surface-muted); border-radius: 5px; overflow: hidden;"><div style="width: ${w}%; height: 100%; background: var(--primary);"></div></div>
+          <span style="width: 30px; text-align: right; font-variant-numeric: tabular-nums;">${n}개</span>
+        </div>`;
+      });
+      const pillarsRow = [pillars.year, pillars.month, pillars.day, pillars.hour].map(p => p ? `${p.gan}${p.ji}` : "—").join(" ");
+      let tenGodLines = "";
+      const labels = ["년주", "월주", "일주", "시주"];
+      summary.tenGods.forEach((t, i) => {
+        if (t) tenGodLines += `<span style="display: inline-block; margin: 2px 8px 2px 0; color: var(--text-muted);">${labels[i]} ${t}</span>`;
+      });
+      let notes = "";
+      Object.keys(summary.groupCount).forEach(g => {
+        if (summary.groupCount[g] >= 2) notes += `<div>${g}(${summary.groupCount[g]}개) — ${SIPSONG_NOTE[g]}</div>`;
+      });
+      if (!notes) notes = "<div>특정 기운이 크게 몰려 있지 않은 균형 구조입니다.</div>";
+      box.innerHTML = `
+        <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px;">
+          <div style="font-weight: 700; margin-bottom: 8px;">명식 — ${pillarsRow} <span style="font-size: 0.8rem; color: var(--text-muted);">(${pillars.ruleVersion})</span></div>
+          <div style="margin-bottom: 10px;">일간 ${pillars.day.gan}: ${ILGAN_NOTE[dayStem]}</div>
+          <div style="margin-bottom: 10px;">${elBars}</div>
+          <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 8px;">${tenGodLines}</div>
+          <div style="font-size: 0.88rem; line-height: 1.7;">${notes}</div>
+        </div>`;
+    }
+
+    function renderTci(tci) {
+      const box = document.getElementById("tciResult");
+      if (!box) return;
+      let html = "<h4 style=\"font-size: 0.95rem; font-weight: 700; margin-bottom: 10px;\">영역별 관찰</h4>";
+      Object.keys(tci).forEach(k => {
+        html += `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 6px 0; font-size: 0.9rem;">
+          <span>${k}</span><span style="color: var(--text-muted);">${tci[k].score} — ${tci[k].label}</span>
+        </div>`;
+      });
+      html += "<p style=\"font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;\">자체 문항이라 공식 TCI 점수·백분위가 아니며, 정상/비정상 판정이 아닙니다.</p>";
+      box.innerHTML = html;
+    }
+
+    function buildTciQuestions() {
+      const box = document.getElementById("tciQuestions");
+      if (!box) return;
+      box.innerHTML = TCI_QUESTIONS.map((q, i) => `
+        <div style="border-bottom: 1px solid var(--border); padding: 10px 0;">
+          <div style="font-size: 0.9rem; margin-bottom: 6px;">${i + 1}. ${q.text}</div>
+          <div style="display: flex; gap: 10px; font-size: 13px; color: var(--text-muted);">
+            ${[1, 2, 3, 4, 5].map(v => `<label style="display: inline-flex; align-items: center; gap: 4px;"><input type="radio" name="tciq${i}" value="${v}">${v}</label>`).join("")}
+          </div>
+        </div>`).join("");
+    }
+
+    if (btnCalcSaju) {
+      btnCalcSaju.addEventListener("click", () => {
+        const dv = document.getElementById("v2BirthDate").value;
+        const tv = document.getElementById("v2BirthTime").value;
+        const noTime = document.getElementById("v2NoTime").checked;
+        if (!dv) { alert("생년월일을 먼저 입력해주세요."); return; }
+        const parts = dv.split("-").map(Number);
+        let hour = null;
+        if (!noTime && tv) hour = parseInt(tv.split(":")[0], 10);
+        const pillars = calcPillars(parts[0], parts[1], parts[2], hour, noTime || !tv);
+        v2State.saju = sajuSummary(pillars);
+        renderSaju(pillars);
+        renderFusionIfReady();
+      });
+    }
+    if (btnTciSubmit) {
+      btnTciSubmit.addEventListener("click", () => {
+        const answers = [];
+        for (let i = 0; i < TCI_QUESTIONS.length; i++) {
+          const sel = document.querySelector(`input[name="tciq${i}"]:checked`);
+          if (!sel) { alert(`${i + 1}번 문항에 응답해주세요.`); return; }
+          answers.push(Number(sel.value));
+        }
+        v2State.tci = tciScore(answers);
+        renderTci(v2State.tci);
+        renderFusionIfReady();
+      });
+    }
+    buildTciQuestions();
+
     // 페이월 토큰 관리 헬퍼 (localStorage 24시간 만료)
     function getPaywallToken() {
       try {
@@ -1906,6 +2229,8 @@
       // 6. 심층 MBTI 해석 & 소통 전략 (무료 제공)
       renderDeepMbtiAnalysis(document.getElementById("deepAnalysisFreeBox"), mbti);
       document.getElementById("deepAnalysisSection").style.display = "block";
+      v2State.mbti = mbti;
+      renderFusionIfReady();
 
       // 스크롤 이동
       reportSection.scrollIntoView({ behavior: "smooth" });
@@ -2070,6 +2395,10 @@
         configurable: true
       });
       globalThis.maskPII = maskPII;
+      globalThis.calcPillars = calcPillars;
+      globalThis.tenGod = tenGod;
+      globalThis.TCI_QUESTIONS = TCI_QUESTIONS;
+      globalThis.tciScore = tciScore;
       globalThis.maskSpeakerNamesInText = maskSpeakerNamesInText;
       globalThis.isDatePattern = isDatePattern;
       globalThis.splitHeaderAndContent = splitHeaderAndContent;
@@ -2100,6 +2429,10 @@
         get parsedData() { return parsedData; },
         set parsedData(v) { parsedData = v; },
         maskPII,
+        calcPillars,
+        tenGod,
+        TCI_QUESTIONS,
+        tciScore,
         maskSpeakerNamesInText,
         isDatePattern,
         splitHeaderAndContent,
