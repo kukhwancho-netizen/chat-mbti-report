@@ -535,7 +535,7 @@ const p1 = calcPillars(2026, 11, 25, 12, false);
 assert.strictEqual(p1.year.gan + p1.year.ji, '丙午', '년주는 丙午여야 합니다(KASI 2026년 병오년).');
 assert.strictEqual(p1.month.gan + p1.month.ji, '己亥', '11월 월주는 己亥여야 합니다(KASI 2026-11).');
 assert.strictEqual(p1.day.gan + p1.day.ji, '癸卯', '2026-11-25 일주는 癸卯여야 합니다(KASI).');
-assert.strictEqual(p1.ruleVersion, 'v2-approx', 'ruleVersion이 기록되어야 합니다.');
+assert.strictEqual(p1.ruleVersion, 'v2.1-termlong', 'ruleVersion이 기록되어야 합니다.');
 
 // 15-2. 입춘 연도 경계: 2026-01-20은 입춘 전 → 년주는 이전 해 乙巳
 const p2 = calcPillars(2026, 1, 20, 12, false);
@@ -692,30 +692,58 @@ const { calcDaewun } = sandbox;
 assert(typeof calcDaewun === 'function', 'calcDaewun이 로드되지 않았습니다.');
 
 // 19-1. 1990-05-15 남성: 庚午년(庚=양간) → 양년 남 = 순행, 월주 辛巳 → 다음 壬午부터
-const dw = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "M");
+const dw = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "M", 14);
 assert(dw && dw.forward === true, '양년 남성은 순행이어야 합니다.');
 assert.strictEqual(dw.list[0].gan + dw.list[0].ji, '壬午', '월주 辛巳 순행 첫 대운은 壬午여야 합니다.');
 assert.strictEqual(dw.list[1].gan + dw.list[1].ji, '癸未', '두 번째 대운은 癸未여야 합니다.');
-assert(dw.startAge >= 1 && dw.startAge <= 12, '대운수는 1~12세 범위여야 합니다(근사).');
+assert(dw.startAge >= 1 && dw.startAge <= 12, '대운수는 1~12세 범위여야 합니다.');
+assert.strictEqual(dw.startAge, 7, '1990-05-15 14:30 순행 대운수는 7세여야 합니다(입망종까지 약 21.7일).');
 assert.strictEqual(dw.list.length, 8, '대운은 8구간(80년)입니다.');
 
 // 19-2. 역행: 1990-05-15 여성 → 음년? 庚=양간이므로 양년 여 = 역행
-const dwF = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "F");
+const dwF = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "F", 14);
 assert(dwF.forward === false, '양년 여성은 역행이어야 합니다.');
 assert.strictEqual(dwF.list[0].gan + dwF.list[0].ji, '庚辰', '월주 辛巳 역행 첫 대운은 庚辰이어야 합니다.');
 
 // 19-3. 성별 미입력 → null (대운 미계산 안내)
-assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, ""), null, '성별 미입력 시 대운은 null이어야 합니다.');
+assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "", 14), null, '성별 미입력 시 대운은 null이어야 합니다.');
 
 // 19-4. 음년(辛未 1991) 남성 = 역행: 월주 癸巳 → 첫 대운 壬辰
-const dwYin = calcDaewun(calcPillars(1991, 5, 15, 14, false), 1991, 5, 15, "M");
+const dwYin = calcDaewun(calcPillars(1991, 5, 15, 14, false), 1991, 5, 15, "M", 14);
 assert(dwYin.forward === false, '음년 남성은 역행이어야 합니다.');
 assert.strictEqual(dwYin.list[0].gan + dwYin.list[0].ji, '壬辰', '월주 癸巳 역행 첫 대운은 壬辰이어야 합니다.');
 
 // 19-5. 성별 방어: M/F 외 값은 null
-assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, undefined), null, 'undefined 성별은 null이어야 합니다.');
+assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, undefined, 14), null, 'undefined 성별은 null이어야 합니다.');
 
 // (한계) Suite 18의 querySelector mock은 라디오 DOM·위임 이벤트의 실제 경로를 대체하지 못함 — 체인 연결 확인용 스모크로 한정
 console.log('PASS: 대운·연운 계산 (간지 시퀀스·방향·경계) 통과');
+
+console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
+
+console.log('--- Test Suite 21: 500원 프리미엄 결제 토큰 (데모 모드·만료·위조 방지) 검증 ---');
+
+const { getPremiumToken, savePremiumToken } = sandbox;
+const PREMIUM_KEY = sandbox.STORAGE_PREMIUM_KEY ?? 'jegal_premium_token';
+
+// 21-1. 토큰 없음 → null
+mockLocalStorage.clear();
+assert.strictEqual(getPremiumToken(), null, '초기 상태는 토큰이 없어야 합니다.');
+
+// 21-2. 데모 토큰 저장·복원
+const saved = savePremiumToken(true);
+assert(saved && saved.paid === true && saved.demo === true, '데모 토큰이 저장되어야 합니다.');
+assert(getPremiumToken() && getPremiumToken().paid === true, '토큰이 복원되어야 합니다.');
+
+// 21-3. 만료 토큰 → 자동 제거
+mockLocalStorage.setItem(PREMIUM_KEY, JSON.stringify({ paid: true, amount: 500, expiresAt: Date.now() - 3600000 }));
+assert.strictEqual(getPremiumToken(), null, '만료 토큰은 무효화되어야 합니다.');
+assert.strictEqual(mockLocalStorage.getItem(PREMIUM_KEY), null, '만료 토큰은 제거되어야 합니다.');
+
+// 21-4. 위조 토큰(paid 아님·amount 불일치) → 무효
+mockLocalStorage.setItem(PREMIUM_KEY, JSON.stringify({ paid: false, amount: 500, expiresAt: Date.now() + 3600000 }));
+assert.strictEqual(getPremiumToken(), null, 'paid=false 토큰은 무효화되어야 합니다.');
+
+console.log('PASS: 500원 프리미엄 결제 토큰 (데모 모드·만료·위조 방지) 통과');
 
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');

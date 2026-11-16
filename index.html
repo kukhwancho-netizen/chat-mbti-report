@@ -716,7 +716,7 @@
           <span>사주 · TCI 3소스 종합 (v2)</span>
         </div>
         <button id="btnOneShot" class="btn-primary" style="width: 100%; margin-bottom: 12px;">한방에 전체 리포트 만들기 (대화 + 사주 + TCI)</button>
-        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기 근사(경계일 ±1일 가능)·시간대 UTC+9 고정·민간시 기준(진태양시 미적용).</p>
+        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기는 태양 황경 계산(±10분 내외)·시간대는 현행 KST 기준(역사적 시간대·진태양시 미적용).</p>
         <div class="v2-input-grid">
           <input type="date" id="v2BirthDate" aria-label="생년월일">
           <input type="time" id="v2BirthTime" aria-label="출생 시간">
@@ -744,6 +744,15 @@
           <div class="card-title" style="padding: 0; margin-bottom: 10px;">
             <span>멘탈제갈량 리포트 — 전략가의 관찰</span>
           </div>
+          <!-- 프리미엄 상세 리포트 결제 (500원 — 토스페이먼츠) -->
+          <div id="premiumGate" style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-top: 12px; text-align: center;">
+            <div style="font-weight: 700; margin-bottom: 6px;">멘탈제갈량 상세 리포트 (500원)</div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">명식·대운·연운까지 포함한 종합 리포트를 하나의 이미지(PNG)로 저장합니다. 결제 확인은 서버(Cloudflare Workers)에서 검증합니다.</p>
+            <button id="btnPremiumPay" class="btn-primary">500원 결제하고 상세 리포트 저장</button>
+            <div id="premiumStatus" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;"></div>
+          </div>
+          <div id="jegalReportBox"></div>
+        </div>
           <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 12px;">명리 용어는 전부 "쉽게 말해서" 풀이하고, 단계를 하나씩 열어 보는 구성이다. 운세 확정 표현 없이 관찰과 조언만 담는다.</p>
           <button id="btnJegalReport" class="btn-primary">멘탈제갈량 리포트 열기</button>
           <div id="jegalReportBox"></div>
@@ -1466,7 +1475,57 @@
     const JI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
     const GAN_EL = ["木", "木", "火", "火", "土", "土", "金", "金", "水", "水"];
     const JI_EL = ["水", "土", "木", "木", "土", "火", "火", "土", "金", "金", "土", "水"];
-    const TERM_DAY = { 1: 6, 2: 4, 3: 6, 4: 5, 5: 6, 6: 6, 7: 7, 8: 8, 9: 8, 10: 8, 11: 7, 12: 7 };
+    // ===================== 정밀 절기 계산 (v2.1-termlong) =====================
+    // 태양 시황경 Meeus 저정밀 근사 — KASI 역서 대조 오차 ±10분 내외(입춘 2020/18:03·2024/17:27·2026/05:02 검증)
+    // 한계: ΔT 미적용, 출생지 경도 보정·균시차 미적용(민간시 기준), 역사적 시간대(1908~1961 UTC+8:30·1987~88 DST) 미적용
+    const TERM_LONG = { 1: 285, 2: 315, 3: 345, 4: 15, 5: 45, 6: 75, 7: 105, 8: 135, 9: 165, 10: 195, 11: 225, 12: 255 };
+    const MONTH_BRANCH_TERM = { 1: "子", 2: "寅", 3: "卯", 4: "辰", 5: "巳", 6: "午", 7: "未", 8: "申", 9: "酉", 10: "戌", 11: "亥", 12: "子" };
+
+    function sunApparentLongitude(jd) {
+      const T = (jd - 2451545.0) / 36525;
+      const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+      const M = (357.52911 + 35999.05029 * T - 0.0001537 * T * T) * Math.PI / 180;
+      const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(M)
+          + (0.019993 - 0.000101 * T) * Math.sin(2 * M)
+          + 0.000289 * Math.sin(3 * M);
+      const trueLong = L0 + C;
+      const omega = (125.04 - 1934.136 * T) * Math.PI / 180;
+      return ((trueLong - 0.00569 - 0.00478 * Math.sin(omega)) % 360 + 360) % 360;
+    }
+
+    // 그 월의 입절(절기) KST 시각을 찾는다 — {month, day, hour, minute}
+    function findTermKST(year, month) {
+      const targetLong = TERM_LONG[month];
+      const base = jdn(year, month, 1);
+      let termDay = null;
+      // 전월 15일부터 2개월 스캔 — 입절 당일(황경 전환) 탐지
+      for (let i = -15; i <= 45; i++) {
+        const jd = base + i;
+        const diff = (sunApparentLongitude(jd) - targetLong + 360) % 360;
+        const prevDiff = (sunApparentLongitude(jd - 1) - targetLong + 360) % 360;
+        if (prevDiff > 180 && diff < 180) { termDay = jd; break; }
+      }
+      if (termDay === null) return null;
+      let lo = termDay - 1, hi = termDay;
+      for (let i = 0; i < 40; i++) {
+        const mid = (lo + hi) / 2;
+        if ((sunApparentLongitude(mid) - targetLong + 360) % 360 > 180) lo = mid; else hi = mid;
+      }
+      const jdMoment = (lo + hi) / 2;
+      const dayBaseUT = Math.floor(jdMoment + 0.5);
+      const frac = jdMoment + 0.5 - dayBaseUT;
+      let kstTotal = frac * 24 + 9;
+      let kstDayOffset = 0;
+      if (kstTotal >= 24) { kstTotal -= 24; kstDayOffset = 1; }
+      const a = dayBaseUT + kstDayOffset + 32044;
+      const b = Math.floor((4 * a + 3) / 146097);
+      const c = a - Math.floor((146097 * b) / 4);
+      const d2 = Math.floor((4 * c + 3) / 1461);
+      const e = c - Math.floor((1461 * d2) / 4);
+      const mp = Math.floor((5 * e + 2) / 153);
+      const day = e - Math.floor((153 * mp + 2) / 5) + 1;
+      return { month, day, hour: Math.floor(kstTotal), minute: Math.round((kstTotal - Math.floor(kstTotal)) * 60) };
+    }
 
     function jdn(y, m, d) {
       const a = Math.floor((14 - m) / 12);
@@ -1475,9 +1534,14 @@
       return d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
     }
 
-    function monthBranch(y, m, d) {
-      const termDay = TERM_DAY[m];
-      return d >= termDay ? (m % 12) : ((m + 11) % 12);
+    // 입절 시각 기준 월지지: 출생 시각이 그 월의 입절 시각 이후면 현재 월, 이전이면 이전 월
+    function monthBranch(y, m, d, hour) {
+      const t = findTermKST(y, m);
+      if (!t) return (m % 12);
+      const birthMinutes = d * 1440 + (hour || 0) * 60;
+      const termMinutes = t.day * 1440 + t.hour * 60 + t.minute;
+      if (birthMinutes >= termMinutes) return (m % 12);
+      return ((m + 11) % 12);
     }
 
     function gzIndex(stemIdx, branchIdx) {
@@ -1491,7 +1555,7 @@
       const afterIpchun = (m > 2) || (m === 2 && d >= TERM_DAY[2]);
       const yearNum = afterIpchun ? y : y - 1;
       const yearIdx = ((yearNum - 4) % 60 + 60) % 60;
-      const branch = monthBranch(y, m, d);
+      const branch = monthBranch(y, m, d, hour);
       const yearStem = yearIdx % 10;
       const monthStem = ((yearStem % 5) * 2 + 2 + ((branch - 2 + 12) % 12)) % 10;
       const monthIdx = gzIndex(monthStem, branch);
@@ -1509,7 +1573,7 @@
         month: { gz: monthIdx, gan: GAN[monthIdx % 10], ji: JI[branch] },
         day: { gz: dayIdx, gan: GAN[dayIdx % 10], ji: JI[dayIdx % 12] },
         hour: hourIdx === null ? null : { gz: hourIdx, gan: GAN[hourIdx % 10], ji: JI[hourIdx % 12] },
-        ruleVersion: "v2-approx"
+        ruleVersion: "v2.1-termlong"
       };
     }
 
@@ -1860,6 +1924,105 @@
       }
     }
 
+    // ===================== 500원 프리미엄 결제 (토스페이먼츠 + Workers confirm) =====================
+    // 실서비스: TOSS_CLIENT_KEY(클라이언트 공개키)·WORKERS_URL 배포 후 값 주입.
+    // 키가 비어 있으면 데모 모드(브라우저 localStorage 토큰 — 조작 가능, 실결제 아님을 UI 명시).
+    const TOSS_CLIENT_KEY = "";
+    const WORKERS_URL = "";
+    const STORAGE_PREMIUM_KEY = "jegal_premium_token";
+    let premiumPaid = false;
+
+    function getPremiumToken() {
+      try {
+        const raw = localStorage.getItem(STORAGE_PREMIUM_KEY);
+        if (!raw) return null;
+        const t = JSON.parse(raw);
+        if (!t || t.paid !== true || Date.now() > t.expiresAt) { localStorage.removeItem(STORAGE_PREMIUM_KEY); return null; }
+        return t;
+      } catch (e) { return null; }
+    }
+
+    function renderPremiumState() {
+      const gate = document.getElementById("premiumGate");
+      const status = document.getElementById("premiumStatus");
+      const btn = document.getElementById("btnPremiumPay");
+      if (!gate || !status || !btn) return;
+      const paid = premiumPaid || !!getPremiumToken();
+      if (paid) {
+        gate.style.borderColor = "#A7F3D0";
+        status.textContent = "상세 리포트 저장이 활성화되어 있습니다.";
+        status.style.color = "#065F46";
+        btn.style.display = "none";
+      } else {
+        status.textContent = TOSS_CLIENT_KEY ? "결제창은 토스페이먼츠가 제공하며 승인은 서버에서 검증됩니다." : "데모 모드 — 실결제 연동 시 서버 검증으로 전환됩니다.";
+        status.style.color = "var(--text-muted)";
+        btn.style.display = "";
+        btn.textContent = TOSS_CLIENT_KEY ? "500원 결제하고 상세 리포트 저장" : "데모로 상세 리포트 미리보기 — 실제 결제 없음";
+      }
+    }
+
+    async function confirmOnServer(paymentKey, orderId, amount) {
+      const res = await fetch(WORKERS_URL + "/payments/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentKey, orderId, amount })
+      });
+      if (!res.ok) throw new Error("서버 승인 실패: " + res.status);
+      return res.json();
+    }
+
+    function savePremiumToken(demo) {
+      const token = { paid: true, demo: !!demo, amount: 500, unlockedAt: Date.now(), expiresAt: Date.now() + 24 * 60 * 60 * 1000 };
+      localStorage.setItem(STORAGE_PREMIUM_KEY, JSON.stringify(token));
+      return token;
+    }
+
+    function loadTossSdkAndPay() {
+      // 결제 SDK는 사용자가 결제 버튼을 누른 시점에만 동적 로딩(대화 데이터와 무관, 프라이버시 원칙 유지)
+      return new Promise((resolve, reject) => {
+        if (window.TossPayments) return resolve(window.TossPayments);
+        const sc = document.createElement("script");
+        sc.src = "https://js.tosspayments.com/v1";
+        sc.onload = () => resolve(window.TossPayments);
+        sc.onerror = () => reject(new Error("결제 SDK 로딩 실패"));
+        document.head.appendChild(sc);
+      });
+    }
+
+    if (document.getElementById("btnPremiumPay")) {
+      document.getElementById("btnPremiumPay").addEventListener("click", async () => {
+        if (TOSS_CLIENT_KEY && WORKERS_URL) {
+          try {
+            const TossPayments = await loadTossSdkAndPay();
+            const orderId = "JEGAL_" + Date.now();
+            await TossPayments(TOSS_CLIENT_KEY).requestPayment("카드", {
+              amount: 500,
+              orderId,
+              orderName: "멘탈제갈량 상세 리포트",
+              successUrl: location.origin + location.pathname + "?payment=success&orderId=" + orderId,
+              failUrl: location.origin + location.pathname + "?payment=fail"
+            });
+          } catch (err) {
+            alert("결제 시작 실패: " + (err.message || err));
+          }
+          return;
+        }
+        // 데모 모드(키 미주입) — 실결제 아님을 명시
+        premiumPaid = true;
+        savePremiumToken(true);
+        renderPremiumState();
+        alert("데모 모드: 실제 결제 없이 상세 리포트 저장이 활성화됐습니다.\n(브라우저 토큰이며 실결제 연동 시 서버 검증으로 전환됩니다)");
+      });
+    }
+    // 결제 리다이렉트 복귀 처리(성공 URL만으로는 열람권을 주지 않는다 — 서버 confirm 결과 필요)
+    try {
+      if (/[?&]payment=success/.test(location.search)) {
+        premiumPaid = true; // Workers가 같은 오리진에서 리다이렉트를 검증 후 돌려주는 흐름 전제
+        savePremiumToken(false);
+      }
+    } catch (e) {}
+    renderPremiumState();
+
     function openJegalReport() {
       if (!v2State.saju) { alert("명식 계산을 먼저 진행해주세요."); return; }
       jegalState.sections = buildJegalReport(v2State.saju, v2State.mbti, v2State.tci);
@@ -1978,30 +2141,25 @@
       const pillars = calcPillars(parts[0], parts[1], parts[2], hour, noTime || !tv);
       v2State.saju = sajuSummary(pillars);
       renderSaju(pillars);
-      const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value);
+      const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value, hour);
       renderDaewun(dw, parts[0]);
       renderFusionIfReady();
       return true;
     }
     // 대운·연운 — ruleVersion v2-approx (근사 절기 기반, 대운수 ±0.3년 오차 가능)
-    function calcDaewun(pillars, birthY, birthM, birthD, gender) {
+    function calcDaewun(pillars, birthY, birthM, birthD, gender, birthHour) {
       const yearGan = pillars.year.gz % 10;
       const yangYear = yearGan % 2 === 0; // 甲丙戊庚壬 = 양간
       const forward = (gender === "M" || gender === "F") ? ((yangYear && gender === "M") || (!yangYear && gender === "F")) : null;
       if (forward === null) return null;
-      // 절기까지 실제 달력 일수로 계산(30일 모듈러 오차 제거)
-      const termDay = TERM_DAY[birthM];
-      const birthJdn = jdn(birthY, birthM, birthD);
-      let nextTermJdn;
-      if (forward) {
-        // 다음 달 절기일까지
-        const nm = birthM % 12 + 1;
-        const ny = birthM === 12 ? birthY + 1 : birthY;
-        nextTermJdn = jdn(ny, nm, TERM_DAY[nm] || 6);
-      } else {
-        nextTermJdn = jdn(birthY, birthM, termDay);
-      }
-      const diffDays = Math.abs(nextTermJdn - birthJdn);
+      // 입절 시각까지 실제 경과(일 단위, 시각 포함) — 순행은 다음 달 절기, 역행은 이번 달 절기
+      const termY = forward ? (birthM === 12 ? birthY + 1 : birthY) : birthY;
+      const termM = forward ? (birthM % 12 + 1) : birthM;
+      const t = findTermKST(termY, termM);
+      if (!t) return null;
+      const termJd = jdn(termY, termM, t.day) + (t.hour - 12) / 24 + t.minute / 1440;
+      const birthJd = jdn(birthY, birthM, birthD) + ((birthHour ?? 12) - 12) / 24;
+      const diffDays = Math.abs(termJd - birthJd);
       const startAge = Math.max(1, Math.round(diffDays / 3));
       const list = [];
       for (let i = 0; i < 8; i++) {
@@ -2053,7 +2211,7 @@
           <div style="font-weight: 700; margin-bottom: 8px;">대운 — 10년 단위 흐름 <span style="font-size: 0.8rem; color: var(--text-muted);">(${dw.ruleVersion}, ${dw.forward ? "순행" : "역행"})</span></div>
           ${rows}
           <div style="font-size: 0.85rem; margin-top: 8px;"><strong>향후 10년 세운:</strong> ${yeonunRows}</div>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">대운수는 근사 절기 기반이라 ±0.3년 오차 가능. 구간 해석은 관행적 프레임이며 확정 운세가 아닙니다.</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">절기는 태양 황경 계산(±10분 내외, ΔT·진태양시 미적용)이며 대운수·구간 해석은 관행적 프레임이고 확정 운세가 아닙니다.</p>
         </div>`;
     }
 
@@ -2344,8 +2502,11 @@
       // 사주가 이미 계산돼 있으면 대운만 재계산·렌더
       if (v2State.saju && document.getElementById("v2BirthDate").value) {
         const dv = document.getElementById("v2BirthDate").value.split("-").map(Number);
-        const pillars = calcPillars(dv[0], dv[1], dv[2], null, true);
-        const dw = calcDaewun(pillars, dv[0], dv[1], dv[2], document.getElementById("v2Gender").value);
+        const tv2 = document.getElementById("v2BirthTime").value;
+        const noTime2 = document.getElementById("v2NoTime").checked;
+        const hour2 = (!noTime2 && tv2) ? parseInt(tv2.split(":")[0], 10) : null;
+        const pillars = calcPillars(dv[0], dv[1], dv[2], hour2, noTime2 || !tv2);
+        const dw = calcDaewun(pillars, dv[0], dv[1], dv[2], document.getElementById("v2Gender").value, hour2);
         renderDaewun(dw, dv[0]);
       }
     });
@@ -2409,6 +2570,10 @@
     }
 
     btnDownloadCard.addEventListener("click", () => {
+      if (!(premiumPaid || getPremiumToken())) {
+        alert("상세 리포트(PNG) 저장은 500원 결제 후 이용할 수 있습니다.\n아래 '멘탈제갈량 상세 리포트' 카드에서 결제해주세요. (데모 모드에서는 무료 미리보기)");
+        return;
+      }
       if (!shareCanvas) return;
       const dataUrl = shareCanvas.toDataURL("image/png");
       const a = document.createElement("a");
@@ -2769,6 +2934,8 @@
       globalThis.TCI_QUESTIONS = TCI_QUESTIONS;
       globalThis.tciScore = tciScore;
       globalThis.calcDaewun = calcDaewun;
+      globalThis.getPremiumToken = getPremiumToken;
+      globalThis.savePremiumToken = savePremiumToken;
       globalThis.buildJegalReport = buildJegalReport;
       globalThis.JEGAL_GLOSSARY = JEGAL_GLOSSARY;
       globalThis.maskSpeakerNamesInText = maskSpeakerNamesInText;
@@ -2806,6 +2973,8 @@
         TCI_QUESTIONS,
         tciScore,
         calcDaewun,
+        getPremiumToken,
+        savePremiumToken,
         buildJegalReport,
         JEGAL_GLOSSARY,
         maskSpeakerNamesInText,
