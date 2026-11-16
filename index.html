@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>대화 기반 MBTI 자기이해 리포트 (카톡·지피티 — 클라이언트 전용)</title>
+  <title>지피지기 백전백승 — 대화 기반 MBTI 자기이해 리포트</title>
   <style>
     :root {
-      --primary: #4F46E5;
-      --primary-hover: #4338CA;
-      --primary-light: #EEF2FF;
-      --bg: #F8FAFC;
+      /* GPT 디자인 자문 스펙: 웜 뉴트럴 라이트 + 바이올렛 단일 포인트 */
+      --primary: #5B50E6;
+      --primary-hover: #4C40D0;
+      --primary-light: #EEEDFF;
+      --bg: #F7F7F5;
       --card-bg: #FFFFFF;
-      --text-main: #0F172A;
-      --text-muted: #64748B;
-      --border: #E2E8F0;
-      --accent: #0EA5E9;
-      --accent-green: #10B981;
-      --accent-amber: #F59E0B;
-      --accent-purple: #8B5CF6;
-      --danger: #EF4444;
-      --radius: 14px;
-      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+      --text-main: #18181B;
+      --text-muted: #62626B;
+      --border: #E4E4E7;
+      --surface-muted: #F1F1F4;
+      --input-bg: #FAFAFB;
+      --accent: #0F766E;
+      --danger: #B91C1C;
+      --radius: 20px;
+      --radius-inner: 14px;
+      --shadow: none;
+      --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.06);
     }
 
     * {
@@ -39,15 +40,35 @@
     }
 
     .container {
-      max-width: 960px;
+      max-width: 1120px;
       margin: 0 auto;
+      padding: 0 16px;
     }
 
     /* 헤더 및 안내문 */
     header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
+      padding-top: 32px;
+      background: radial-gradient(circle 420px at 50% 0%, rgba(91, 80, 230, 0.06), transparent 70%);
     }
+
+    .hero-bars {
+      margin-bottom: 14px;
+    }
+
+    .hero-bars i {
+      display: inline-block;
+      width: 2px;
+      margin: 0 2px;
+      background: var(--primary);
+      border-radius: 1px;
+    }
+
+    .hero-bars i:nth-child(1) { height: 8px; }
+    .hero-bars i:nth-child(2) { height: 14px; }
+    .hero-bars i:nth-child(3) { height: 20px; }
+    .hero-bars i:nth-child(4) { height: 12px; }
 
     .badge-pill {
       display: inline-block;
@@ -61,28 +82,33 @@
     }
 
     h1 {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--text-main);
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
+      font-size: 48px;
+      line-height: 60px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 12px;
     }
 
     .subtitle {
-      font-size: 1rem;
+      font-size: 18px;
+      line-height: 30px;
       color: var(--text-muted);
+      margin-bottom: 20px;
     }
 
     /* 공지 배너 */
     .notice-card {
-      background-color: #F0FDF4;
-      border: 1px solid #BBF7D0;
-      border-radius: var(--radius);
-      padding: 16px 20px;
+      background-color: var(--surface-muted);
+      border: none;
+      border-radius: var(--radius-inner);
+      padding: 12px 16px;
       margin-bottom: 24px;
       display: flex;
       flex-direction: column;
       gap: 6px;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: var(--text-main);
     }
 
     .notice-item {
@@ -103,7 +129,7 @@
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 24px;
+      padding: 28px;
       margin-bottom: 24px;
       box-shadow: var(--shadow);
     }
@@ -120,12 +146,13 @@
     /* 입력 영역 */
     textarea {
       width: 100%;
-      height: 180px;
+      height: 240px;
       padding: 14px;
-      font-size: 0.9rem;
-      line-height: 1.5;
+      font-size: 0.95rem;
+      line-height: 1.6;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-inner);
+      background: var(--input-bg);
       resize: vertical;
       outline: none;
       transition: border-color 0.2s;
@@ -161,6 +188,7 @@
     .btn-primary {
       background-color: var(--primary);
       color: #FFFFFF;
+      font-weight: 700;
     }
     .btn-primary:hover {
       background-color: var(--primary-hover);
@@ -329,9 +357,11 @@
     }
 
     .metric-box-val {
-      font-size: 1.3rem;
-      font-weight: 800;
+      font-size: 2rem;
+      line-height: 1.25;
+      font-weight: 700;
       color: var(--text-main);
+      font-variant-numeric: tabular-nums;
     }
 
     .metric-box-label {
@@ -350,7 +380,7 @@
     .quote-card {
       background: #FFFFFF;
       border: 1px solid var(--border);
-      border-left: 4px solid var(--primary);
+      border-left: 3px solid var(--primary);
       border-radius: 8px;
       padding: 14px 16px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -467,8 +497,8 @@
 
     /* 반응형 */
     @media (max-width: 640px) {
-      h1 { font-size: 1.6rem; }
-      .card { padding: 16px; }
+      h1 { font-size: 32px; line-height: 42px; letter-spacing: -0.02em; }
+      .card { padding: 20px; }
       .mbti-type-badge { font-size: 2.3rem; }
     }
   </style>
@@ -477,15 +507,17 @@
   <div class="container">
     <!-- 서비스 헤더 -->
     <header>
-      <div class="badge-pill">무서버 브라우저 전용 v1 프로토타입</div>
-      <h1>대화 기반 MBTI 자기이해 리포트 <span style="font-size:0.8rem; color:var(--text-muted);">카톡·지피티 등 대화 텍스트</span></h1>
-      <p class="subtitle">개인정보 자동 마스킹 · 정량 커뮤니케이션 지표 · 4축 성향 원문 근거 인용 · 공유카드 생성</p>
+      <div class="hero-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="badge-pill">로그인 없이 · 이 기기에서만 처리</div>
+      <h1>지피지기 <span style="color: var(--primary);">백전백승</span></h1>
+      <p class="subtitle">카톡·지피티 대화에서, 나의 성향을 읽어보세요.<br>
+      <span style="font-size: 0.95rem;">개인정보 자동 마스킹 · 4축 성향 근거 인용 · 공유카드 생성</span></p>
     </header>
 
     <!-- 원문 비전송 및 비진단 원칙 고지 배너 -->
     <section class="notice-card">
       <div class="notice-item">
-        <strong>🔒 브라우저 메모리 격리 (비전송 원칙)</strong>
+        <strong>🔒 대화는 이 기기에서만 처리돼요. 외부로 전송하지 않아요.</strong>
         <span>입력하신 대화 텍스트(카톡·지피티 등)는 외부 서버로 <strong>비전송·비저장</strong>되며, 브라우저 안에서만 분석됩니다. 입력창의 원문은 페이지에만 머무르고 탭을 닫으면 함께 사라지며, 분석 상태에는 마스킹 결과만 유지됩니다. 이 서비스는 <strong>별도 개인정보를 수집하지 않습니다</strong> — v2 사주 기능에서는 생년월일시만 입력받습니다(최소 수집 원칙).</span>
       </div>
       <div class="notice-item">
@@ -504,7 +536,7 @@
           </label>
           <input type="file" id="chatFileInput" accept=".txt" style="display: none;">
           <button id="btnLoadSample" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
-            📄 샘플 대화 불러오기
+            📄 예시로 체험하기
           </button>
         </div>
       </div>
@@ -512,7 +544,7 @@
       
       <div class="settings-row">
         <div class="form-group">
-          <label class="form-label" for="speakerSelect">분석 대상 화자 선택 (필수 — 본인 지정 시 '나(화자A)'로 치환)</label>
+          <label class="form-label" for="speakerSelect">누구의 성향을 볼까요? (본인 지정 — 필수)</label>
           <select id="speakerSelect">
             <option value="">대화를 입력하거나 파싱하면 화자 목록이 나타납니다</option>
           </select>
@@ -529,7 +561,7 @@
 
       <div class="btn-row">
         <button id="btnAnalyze" class="btn-primary">
-          ⚡ 리포트 생성 및 분석
+          ⚡ 성향 리포트 만들기
         </button>
         <button id="btnToggleMasked" class="btn-outline">
           👁️ 마스킹된 대화문 확인
@@ -1940,7 +1972,7 @@
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "bold 26px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("대화 기반 MBTI 자기이해 카드", W / 2, 88);
+      ctx.fillText("지피지기 백전백승 — 나의 대화 성향", W / 2, 88);
 
       // 분석 대상 및 비전송 안심 마크 (P1-1)
       ctx.fillStyle = "#64748B";
