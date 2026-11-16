@@ -7,9 +7,9 @@
   <style>
     :root {
       /* GPT 디자인 자문 스펙: 웜 뉴트럴 라이트 + 바이올렛 단일 포인트 */
-      --primary: #5B50E6;
-      --primary-hover: #4C40D0;
-      --primary-light: #EEEDFF;
+      --primary: #18181B;
+      --primary-hover: #000000;
+      --primary-light: #F1F1F4;
       --bg: #F7F7F5;
       --card-bg: #FFFFFF;
       --text-main: #18181B;
@@ -17,10 +17,10 @@
       --border: #E4E4E7;
       --surface-muted: #F1F1F4;
       --input-bg: #FAFAFB;
-      --accent: #0F766E;
+      --accent: #A1A1AA;
       --danger: #B91C1C;
-      --radius: 20px;
-      --radius-inner: 14px;
+      --radius: 8px;
+      --radius-inner: 6px;
       --shadow: none;
       --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.06);
     }
@@ -50,25 +50,7 @@
       text-align: center;
       margin-bottom: 32px;
       padding-top: 32px;
-      background: radial-gradient(circle 420px at 50% 0%, rgba(91, 80, 230, 0.06), transparent 70%);
     }
-
-    .hero-bars {
-      margin-bottom: 14px;
-    }
-
-    .hero-bars i {
-      display: inline-block;
-      width: 2px;
-      margin: 0 2px;
-      background: var(--primary);
-      border-radius: 1px;
-    }
-
-    .hero-bars i:nth-child(1) { height: 8px; }
-    .hero-bars i:nth-child(2) { height: 14px; }
-    .hero-bars i:nth-child(3) { height: 20px; }
-    .hero-bars i:nth-child(4) { height: 12px; }
 
     .badge-pill {
       display: inline-block;
@@ -97,6 +79,16 @@
     }
 
     /* 공지 배너 */
+    .notice-strip {
+      font-size: 14px;
+      line-height: 22px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      margin-bottom: 24px;
+    }
+
     .notice-card {
       background-color: var(--surface-muted);
       border: none;
@@ -188,7 +180,8 @@
     .btn-primary {
       background-color: var(--primary);
       color: #FFFFFF;
-      font-weight: 700;
+      font-weight: 600;
+      border-radius: 8px;
     }
     .btn-primary:hover {
       background-color: var(--primary-hover);
@@ -283,10 +276,11 @@
     }
 
     .axis-card {
-      background: #F8FAFC;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 18px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      border-radius: 0;
+      padding: 12px 0;
     }
 
     .axis-labels {
@@ -308,13 +302,11 @@
     .axis-bar-left {
       height: 100%;
       background: var(--primary);
-      transition: width 0.4s ease;
     }
 
     .axis-bar-right {
       height: 100%;
       background: var(--accent);
-      transition: width 0.4s ease;
     }
 
     .axis-meta {
@@ -326,10 +318,9 @@
     }
 
     .status-badge {
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
+      font-size: 14px;
       font-weight: 600;
+      color: var(--text-muted);
     }
     .status-ok {
       background: #DCFCE7;
@@ -507,36 +498,23 @@
   <div class="container">
     <!-- 서비스 헤더 -->
     <header>
-      <div class="hero-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      <div class="badge-pill">로그인 없이 · 이 기기에서만 처리</div>
-      <h1>지피지기 <span style="color: var(--primary);">백전백승</span></h1>
-      <p class="subtitle">카톡·지피티 대화에서, 나의 성향을 읽어보세요.<br>
-      <span style="font-size: 0.95rem;">개인정보 자동 마스킹 · 4축 성향 근거 인용 · 공유카드 생성</span></p>
+      <h1>지피지기 백전백승</h1>
+      <p class="subtitle">카톡·지피티 대화 텍스트를 마스킹해 성향 경향을 분석합니다. 전송·저장 없이 브라우저에서만 동작합니다.</p>
     </header>
 
-    <!-- 원문 비전송 및 비진단 원칙 고지 배너 -->
-    <section class="notice-card">
-      <div class="notice-item">
-        <strong>🔒 대화는 이 기기에서만 처리돼요. 외부로 전송하지 않아요.</strong>
-        <span>입력하신 대화 텍스트(카톡·지피티 등)는 외부 서버로 <strong>비전송·비저장</strong>되며, 브라우저 안에서만 분석됩니다. 입력창의 원문은 페이지에만 머무르고 탭을 닫으면 함께 사라지며, 분석 상태에는 마스킹 결과만 유지됩니다. 이 서비스는 <strong>별도 개인정보를 수집하지 않습니다</strong> — v2 사주 기능에서는 생년월일시만 입력받습니다(최소 수집 원칙).</span>
-      </div>
-      <div class="notice-item">
-        <strong>💡 자기이해 목적 고지</strong>
-        <span>본 결과는 의료·임상적 진단이 아니며, 카톡·지피티 등 일상 대화 텍스트 패턴을 통해 스스로의 소통 방식을 돌아보는 <strong>자기이해</strong> 보조 리포트입니다.</span>
-      </div>
-    </section>
+    <p class="notice-strip">입력한 대화는 이 기기에서만 처리되며 외부로 전송·저장되지 않습니다. 결과는 규칙 기반 관찰이며 공식 심리검사나 진단이 아닙니다.</p>
 
     <!-- 대화 텍스트 입력 및 PII 설정 카드 -->
     <section class="card">
       <div class="card-title">
-        <span>💬 대화 텍스트 입력 (카톡·지피티 등)</span>
+        <span>대화 입력</span>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           <label for="chatFileInput" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-            📁 파일 업로드 (.txt)
+            파일 불러오기 (.txt)
           </label>
           <input type="file" id="chatFileInput" accept=".txt" style="display: none;">
           <button id="btnLoadSample" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
-            📄 예시로 체험하기
+            예시로 체험
           </button>
         </div>
       </div>
@@ -552,19 +530,17 @@
         <div class="form-group">
           <label class="form-label">개인정보(PII) 마스킹 대상</label>
           <div style="font-size: 0.8rem; color: var(--text-muted); padding-top: 6px;">
-            ✓ 실명 화자명 (나: 화자A / 상대: 화자B, C...)<br>
-            ✓ 전화번호 (010-XXXX-XXXX)<br>
-            ✓ 계좌번호 및 이메일 주소 마스킹 처리
+마스킹 대상: 실명 화자명 · 전화번호 · 계좌번호 · 이메일 주소
           </div>
         </div>
       </div>
 
       <div class="btn-row">
         <button id="btnAnalyze" class="btn-primary">
-          ⚡ 성향 리포트 만들기
+          성향 리포트 만들기
         </button>
         <button id="btnToggleMasked" class="btn-outline">
-          👁️ 마스킹된 대화문 확인
+          마스킹된 대화 보기
         </button>
       </div>
 
@@ -585,7 +561,7 @@
 
       <!-- 정량 커뮤니케이션 지표 패널 -->
       <section class="card">
-        <div class="card-title">📊 정량 커뮤니케이션 분석 지표</div>
+        <div class="card-title">대화 지표</div>
         <div class="metric-grid">
           <div class="metric-box">
             <div class="metric-box-val" id="metricMsgCount">0</div>
@@ -617,7 +593,7 @@
       <!-- 4축 MBTI 스펙트럼 및 신뢰도 -->
       <section class="card">
         <div class="card-title">
-          <span>🧭 4축 성향 스펙트럼 & 근거 충분도 분석</span>
+          <span>성향 축별 분석</span>
           <span id="overallConfidenceBadge" class="status-badge status-ok">근거 충분도 양호</span>
         </div>
         <div class="axis-container" id="axisBarsContainer">
@@ -689,7 +665,7 @@
 
       <!-- 축별 마스킹 원문 근거 인용 카드 -->
       <section class="card">
-        <div class="card-title">🔍 축별 마스킹 원문 근거 인용 카드</div>
+        <div class="card-title">근거 문장</div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
           각 축 판정에 유의미하게 기여한 실제 발화 문장입니다. 개인정보는 완벽히 마스킹된 상태로 인용됩니다.
         </p>
@@ -701,9 +677,9 @@
       <!-- HTML5 Canvas 요약 카드 및 PNG 다운로드 -->
       <section class="card">
         <div class="card-title">
-          <span>🎨 리포트 요약 카드 (PNG 다운로드)</span>
+          <span>리포트 요약 카드 (PNG 다운로드)</span>
           <button id="btnDownloadCard" class="btn-primary">
-            📥 PNG 이미지 저장하기
+            PNG 이미지 저장
           </button>
         </div>
         <p style="font-size: 0.85rem; color: var(--text-muted);">
@@ -717,16 +693,16 @@
       <!-- 심층 MBTI 해석 & 소통 전략 (무료 제공) -->
       <section class="card" id="deepAnalysisSection" style="display: none;">
         <div class="card-title">
-          <span>🎯 심층 MBTI 해석 & 소통 전략</span>
+          <span>심층 해석</span>
         </div>
         <div id="deepAnalysisFreeBox">
           <!-- 동적으로 렌더링 -->
         </div>
-        <div style="background: #FDF4FF; border: 1px solid #F0ABFC; border-radius: 10px; padding: 16px 20px; margin-top: 14px;">
-          <h4 style="font-size: 0.95rem; font-weight: 800; color: #86198F; margin-bottom: 6px;">
-            🔮 사주·TCI 융합 v2 예정 안내
+        <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 14px;">
+          <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">
+            v2 계획
           </h4>
-          <p style="font-size: 0.85rem; color: #701A75; line-height: 1.6;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
             다음 버전에서 만세력 명식 계산(사주 8자·오행·십성)과 TCI식 미니 자기보고를 더해 3소스 융합 리포트를 제공할 예정입니다.
           </p>
         </div>
@@ -736,7 +712,7 @@
     <!-- v2 확장 사주·TCI 융합 분석 티저 -->
     <section class="v2-teaser-card">
       <div class="v2-teaser-title">
-        <span>🔮 v2 차세대 융합 엔진 티저: 사주 명식 & TCI 다각화 결합</span>
+        <span>v2 계획: 사주 명식 · TCI 융합</span>
       </div>
       <p class="v2-teaser-desc">
         v2 버전에서는 단순 언어 습관을 넘어 <strong>사주 8자·오행 분포·십성 명식</strong> 계산 모듈과 
@@ -1544,11 +1520,11 @@
       container.innerHTML = `
         <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px;">
           <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-bottom: 10px;">
-            🎯 ${targetLabel} 심층 MBTI 4축 해석 & 소통 전략 (${type})
+            ${targetLabel} 심층 해석 (${type})
           </h4>
           ${(!mbti.isLack && PERSONA_ONE_LINER[mbti.rawType]) ? `
           <div style="background: #EEF2FF; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.9rem; font-weight: 700; color: #3730A3;">
-            💬 한 줄 요약 — ${PERSONA_ONE_LINER[mbti.rawType]}
+            한 줄 요약 — ${PERSONA_ONE_LINER[mbti.rawType]}
           </div>` : ""}
           <div style="font-size: 0.88rem; color: #334155; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
             ${axisLine(mbti.axisEI, "에너지 방향", "E", [
@@ -1567,9 +1543,6 @@
               `체계적인 시간 계획과 마감 기한 엄수를 통해 심리적 안정감을 얻습니다. 갑작스러운 일정 변경보다는 사전에 합의된 타임라인대로 실행되길 기대합니다.`,
               `상황 변화에 유연하게 대처하며 즉흥적인 융통성을 발휘합니다. 지나치게 엄격한 규율보다는 자율성과 선택의 여지가 열려 있는 환경을 선호합니다.`
             ])}
-            <div style="border-top: 1px dashed #CBD5E1; padding-top: 10px; font-size: 0.82rem; color: #64748B; font-style: italic;">
-              🍀 총평: 당신의 카톡은 이미 당신을 꽤 잘 알고 있었습니다. (당신만 몰랐을 뿐)
-            </div>
           </div>
         </div>
       `;
@@ -1863,13 +1836,11 @@
 
         const stEl = document.getElementById(statusId);
         if (axisData.isLack) {
-          stEl.className = "status-badge status-lack";
           stEl.textContent = "근거 부족";
-          document.getElementById(evidenceId).textContent = `${desc} (키워드 매칭 근거 부족)`;
+          document.getElementById(evidenceId).textContent = `${desc} (근거 부족 — 판단 보류)`;
         } else {
-          stEl.className = "status-badge status-ok";
-          stEl.textContent = `근거 충분도 ${axisData.confidence}%`;
-          document.getElementById(evidenceId).textContent = `${desc} (${axisData.dominant} 성향 우세)`;
+          stEl.textContent = `근거 문장 ${axisData.validQuotes}개 기반`;
+          document.getElementById(evidenceId).textContent = `${desc} (${axisData.dominant} 쪽 관찰됨)`;
         }
       }
 
@@ -1879,12 +1850,11 @@
       renderAxisUI(mbti.axisJP, "valJ", "valP", "barJ", "barP", "evidenceJ", "statusJ", "판단(J)", "인식(P)", "생활 양식 및 행동");
 
       const overallBadge = document.getElementById("overallConfidenceBadge");
+      const totalQuotes = mbti.axisEI.validQuotes + mbti.axisSN.validQuotes + mbti.axisTF.validQuotes + mbti.axisJP.validQuotes;
       if (mbti.isLack) {
-        overallBadge.className = "status-badge status-lack";
         overallBadge.textContent = "근거 부족 (대화 추가 필요)";
       } else {
-        overallBadge.className = "status-badge status-ok";
-        overallBadge.textContent = "근거 충분도 양호";
+        overallBadge.textContent = `근거 문장 총 ${totalQuotes}개 기반`;
       }
 
       // 4. 원문 근거 인용 카드
@@ -1925,9 +1895,9 @@
         const reason = document.createElement("div");
         reason.className = "quote-reason";
         if (ax.data.bestQuote) {
-          reason.innerHTML = `📌 <strong>매칭 단어:</strong> ${ax.data.bestQuote.hits.join(", ")} | <strong>판정 근거:</strong> ${ax.data.dominant} 성향 뉘앙스 검출`;
+          reason.innerHTML = `<strong>매칭 단어:</strong> ${ax.data.bestQuote.hits.join(", ")} | <strong>판정 근거:</strong> ${ax.data.dominant} 성향 뉘앙스 검출`;
         } else {
-          reason.textContent = "📌 근거 부족: 기본 중립 비율(50:50)로 산출됨";
+          reason.textContent = "근거 부족: 기본 중립 비율(50:50)로 산출됨";
         }
         card.appendChild(reason);
 
