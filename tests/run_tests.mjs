@@ -371,18 +371,29 @@ const uniquePersonas = new Set(ALL_TYPES.map(t => PERSONA_MAP[t]));
 assert.strictEqual(uniquePersonas.size, 16, '페르소나 이름은 16유형 모두 서로 달라야 합니다.');
 console.log('PASS: 컨텐츠 톤 가이드 (16유형 페르소나·한 줄 요약 전부 존재) 통과');
 
-// 10-5. 입력 변경 리셋 시 근거 카드·리포트 필드·canvas까지 실제로 비워짐 (DOM 잔류 제거)
+// 10-5. 입력 변경 리셋 시 근거 카드·리포트 필드·축 바·canvas까지 실제로 비워짐 (DOM·픽셀 잔류 제거)
 const prevQuoteGrid = domElements.get('quoteCardsGrid');
 prevQuoteGrid.innerHTML = '<div class="quote-card">이전 분석 근거</div>';
 const prevCanvas = domElements.get('shareCanvas');
+prevCanvas.width = 800;
+prevCanvas.height = 960;
+let clearedRect = null;
+prevCanvas.getContext = () => ({ clearRect: (x, y, w, h) => { clearedRect = { x, y, w, h }; } });
 const prevTarget = domElements.get('mbtiTargetDisplay');
 prevTarget.textContent = '분석 대상: 나(화자A) | 총 5개 발화 분석';
 const prevEvidence = domElements.get('evidenceT');
 prevEvidence.textContent = '판단 및 의사결정 (T 성향 우세)';
+const prevBarE = domElements.get('barE');
+prevBarE.style.width = '67%';
+const prevBarF = domElements.get('barF');
+prevBarF.style.width = '8%';
 resetAnalysisState();
 assert.strictEqual(prevQuoteGrid.innerHTML, '', '입력 변경 시 근거 카드 그리드가 실제로 비워져야 합니다.');
 assert.strictEqual(prevTarget.textContent, '', '리포트 대상 필드가 비워져야 합니다.');
 assert.strictEqual(prevEvidence.textContent, '', '축별 근거 문구가 비워져야 합니다.');
+assert.strictEqual(prevBarE.style.width, '', '축 바(barE) width가 초기화되어야 합니다.');
+assert.strictEqual(prevBarF.style.width, '', '축 바(barF) width가 초기화되어야 합니다.');
+assert(clearedRect && clearedRect.w === 800 && clearedRect.h === 960, 'canvas 픽셀이 클리어되어야 합니다.');
 console.log('PASS: Luna R3 findings 회귀 (콜론 폴백·파일 검증·토큰 위조·리셋 잔류) 통과');
 
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
