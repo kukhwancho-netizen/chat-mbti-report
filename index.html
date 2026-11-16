@@ -716,7 +716,7 @@
           <span>사주 · TCI 3소스 종합 (v2)</span>
         </div>
         <button id="btnOneShot" class="btn-primary" style="width: 100%; margin-bottom: 12px;">한방에 전체 리포트 만들기 (대화 + 사주 + TCI)</button>
-        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기는 태양 황경 계산(±10분 내외)·시간대는 현행 KST 기준(역사적 시간대·진태양시 미적용).</p>
+        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기는 태양 황경 계산(±10분 내외)·시간대는 현행 KST 기준(역사적 시간대·진태양시 미적용). 월주·대운의 입절 비교는 출생 시각을 시 단위로만 비교합니다(분 미포함).</p>
         <div class="v2-input-grid">
           <input type="date" id="v2BirthDate" aria-label="생년월일">
           <input type="time" id="v2BirthTime" aria-label="출생 시간">
@@ -1469,7 +1469,7 @@
 
     // ===================== v2: 사주 · TCI 3소스 종합 =====================
     // 만세력 계산 — ruleVersion "v2.1-termlong"(태양 황경 절기 + KASI 역서 대조)
-    // 한계 명시: 절기일은 평균 근사(경계일 ±1일 오차 가능), 시간대는 UTC+9 고정(역사적 시간대·서머타임 미적용),
+    // 한계 명시: 절기는 태양 황경 계산(±10분 내외, ΔT 미적용), 시간대는 현행 KST(역사적 시간대·서머타임 미적용),
     // 진태양시 미적용(민간시 기준), 일자 경계는 0시 기준(야자시 다음날 취급 미적용). 정밀 명식은 KASI 데이터 기반이 필요합니다.
     const GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
     const JI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
@@ -1973,7 +1973,9 @@
         body: JSON.stringify({ paymentKey, orderId, amount })
       });
       if (!res.ok) throw new Error("서버 승인 실패: " + res.status);
-      return res.json();
+      const data = await res.json();
+      if (!data.ok) throw new Error("서버 승인 거부: " + (data.error || "unknown"));
+      return data;
     }
 
     function savePremiumToken(demo) {
@@ -2061,6 +2063,7 @@
         if (document.getElementById("v2BirthDate").value) {
           if (!calcSajuFromInputs()) return;
           sajuDone = true;
+          if (hasText) runAnalysis(); // 사주·대운이 반영된 캔버스로 재렌더
         }
         if (tciAllAnswered()) {
           submitTci();
@@ -2155,14 +2158,15 @@
       const pillars = calcPillars(parts[0], parts[1], parts[2], hour, noTime || !tv);
       v2State.saju = sajuSummary(pillars);
       renderSaju(pillars);
-      const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value, hour);
+      const minuteOf = (!noTime && tv) ? parseInt(tv.split(":")[1], 10) : 0;
+      const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value, hour, minuteOf);
       v2State.daewun = dw;
       renderDaewun(dw, parts[0]);
       renderFusionIfReady();
       return true;
     }
     // 대운·연운 — ruleVersion v2.1-termlong(정밀 절기 기반 대운수)
-    function calcDaewun(pillars, birthY, birthM, birthD, gender, birthHour) {
+    function calcDaewun(pillars, birthY, birthM, birthD, gender, birthHour, birthMin) {
       const yearGan = pillars.year.gz % 10;
       const yangYear = yearGan % 2 === 0; // 甲丙戊庚壬 = 양간
       const forward = (gender === "M" || gender === "F") ? ((yangYear && gender === "M") || (!yangYear && gender === "F")) : null;
@@ -2171,7 +2175,8 @@
       // 순행: 출생이 이번 월 입절 전이면 이번 월 절기까지, 후면 다음 월 절기까지
       // 역행: 출생이 이번 월 입절 전이면 이전 월 절기까지, 후면 이번 월 절기까지
       const curTerm = findTermKST(birthY, birthM);
-      const beforeTerm = curTerm ? (birthD < curTerm.day) : false;
+      const birthMinOfDay = (birthHour ?? 12) * 60 + (birthMin ?? 0);
+      const beforeTerm = curTerm ? (birthD < curTerm.day || (birthD === curTerm.day && birthMinOfDay < curTerm.hour * 60 + curTerm.minute)) : false;
       let termY = birthY, termM = birthM;
       if (forward) {
         if (beforeTerm) { termY = birthY; termM = birthM; }

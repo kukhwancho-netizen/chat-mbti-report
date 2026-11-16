@@ -692,7 +692,7 @@ const { calcDaewun } = sandbox;
 assert(typeof calcDaewun === 'function', 'calcDaewun이 로드되지 않았습니다.');
 
 // 19-1. 1990-05-15 남성: 庚午년(庚=양간) → 양년 남 = 순행, 월주 辛巳 → 다음 壬午부터
-const dw = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "M", 14);
+const dw = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "M", 14, 30);
 assert(dw && dw.forward === true, '양년 남성은 순행이어야 합니다.');
 assert.strictEqual(dw.list[0].gan + dw.list[0].ji, '壬午', '월주 辛巳 순행 첫 대운은 壬午여야 합니다.');
 assert.strictEqual(dw.list[1].gan + dw.list[1].ji, '癸未', '두 번째 대운은 癸未여야 합니다.');
@@ -701,20 +701,20 @@ assert.strictEqual(dw.startAge, 7, '1990-05-15 14:30 순행 대운수는 7세여
 assert.strictEqual(dw.list.length, 8, '대운은 8구간(80년)입니다.');
 
 // 19-2. 역행: 1990-05-15 여성 → 음년? 庚=양간이므로 양년 여 = 역행
-const dwF = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "F", 14);
+const dwF = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "F", 14, 30);
 assert(dwF.forward === false, '양년 여성은 역행이어야 합니다.');
 assert.strictEqual(dwF.list[0].gan + dwF.list[0].ji, '庚辰', '월주 辛巳 역행 첫 대운은 庚辰이어야 합니다.');
 
 // 19-3. 성별 미입력 → null (대운 미계산 안내)
-assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "", 14), null, '성별 미입력 시 대운은 null이어야 합니다.');
+assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "", 14, 30), null, '성별 미입력 시 대운은 null이어야 합니다.');
 
 // 19-4. 음년(辛未 1991) 남성 = 역행: 월주 癸巳 → 첫 대운 壬辰
-const dwYin = calcDaewun(calcPillars(1991, 5, 15, 14, false), 1991, 5, 15, "M", 14);
+const dwYin = calcDaewun(calcPillars(1991, 5, 15, 14, false), 1991, 5, 15, "M", 14, 30);
 assert(dwYin.forward === false, '음년 남성은 역행이어야 합니다.');
 assert.strictEqual(dwYin.list[0].gan + dwYin.list[0].ji, '壬辰', '월주 癸巳 역행 첫 대운은 壬辰이어야 합니다.');
 
 // 19-5. 성별 방어: M/F 외 값은 null
-assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, undefined, 14), null, 'undefined 성별은 null이어야 합니다.');
+assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, undefined, 14, 30), null, 'undefined 성별은 null이어야 합니다.');
 
 // (한계) Suite 18의 querySelector mock은 라디오 DOM·위임 이벤트의 실제 경로를 대체하지 못함 — 체인 연결 확인용 스모크로 한정
 console.log('PASS: 대운·연운 계산 (간지 시퀀스·방향·경계) 통과');
