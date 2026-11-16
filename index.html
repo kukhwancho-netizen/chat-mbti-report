@@ -731,12 +731,12 @@
     <!-- v2 확장 사주·TCI 융합 분석 티저 -->
     <section class="v2-teaser-card">
       <div class="v2-teaser-title">
-        <span>v2 계획: 사주 명식 · TCI 융합</span>
+        <span>v2: 사주 명식 · TCI 융합 — 아래 카드에서 바로 사용</span>
       </div>
       <p class="v2-teaser-desc">
         v2 버전에서는 단순 언어 습관을 넘어 <strong>사주 8자·오행 분포·십성 명식</strong> 계산 모듈과 
         신뢰할 수 있는 <strong>검토 루브릭</strong> 체계를 탑재합니다. 여기에 12~20문항의 <strong>TCI</strong>(기질 및 성격 검사) 
-        미니 자기보고를 흡수하여, [대화 텍스트 휴리스틱 + 사주 명리 + TCI 심리측정] 3소스가 융합된 입체적 자기이해 엔진을 제공할 예정입니다.
+        미니 자기보고를 흡수하여, [대화 텍스트 휴리스틱 + 사주 명리 + TCI 착안 자기보고] 3소스를 나란히 비교하는 입체적 자기이해 엔진이 아래 카드에서 동작합니다.
       </p>
       <div class="v2-tag-group">
         <span class="v2-tag">사주 오행 분포 (목·화·토·금·수)</span>
@@ -1608,22 +1608,32 @@
     function fusionRow(theme, mbti, tci, saju) {
       // null-safe: 어느 소스가 비어 있어도 예외 없이 대기 문구를 돌려준다
       let chatLine = "대화 분석 전 — 리포트를 먼저 만들어 주세요";
-      let agree = "대기";
       if (mbti && mbti["axis" + theme.axis]) {
         const axis = mbti["axis" + theme.axis];
         chatLine = axis.isLack
           ? "판단 보류 — 근거 문장이 부족해요"
           : `${axis.dominant} 쪽 관찰됨 (근거 문장 ${axis.validQuotes}개)`;
-        agree = axis.isLack ? "보류" : (axis.dominant === theme.high ? "방향 일치" : "다른 관점");
       }
       let tciLine = "TCI 응답 대기 중";
+      let tciPos = null;
       if (tci) {
+        const vals = theme.tciAreas.map(a => tci[a] ? tci[a].score : null).filter(v => v !== null);
+        tciPos = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) >= 3 : null;
         tciLine = theme.tciAreas.map(a => tci[a] ? `${a}: ${tci[a].label} (${tci[a].score})` : `${a}: 미응답`).join(" · ");
       }
       let sajuLine = "명식 계산 대기 중";
+      let sajuPos = null;
       if (saju && saju.groupCount) {
         sajuLine = theme.sajuGroups.map(g => saju.groupCount[g] ? `${g} ${saju.groupCount[g]}개 — ${SIPSONG_NOTE[g].split(" — ")[1]}` : `${g} 없음 — ${SIPSONG_NOTE[g].split(" — ")[1]}이 약한 구조`).join(" · ");
+        sajuPos = theme.sajuGroups.some(g => (saju.groupCount[g] || 0) >= 1);
       }
+      let chatPos = null;
+      if (mbti && mbti["axis" + theme.axis]) {
+        const axis = mbti["axis" + theme.axis];
+        chatPos = !axis.isLack && axis.dominant === theme.high;
+      }
+      // 관점 비교는 응답·계산이 모두 있을 때만 표기한다
+      const agree = (chatPos === null) ? "대화 분석 전" : (tciPos === null ? "TCI 대기" : (chatPos && tciPos ? "방향 비슷" : "관점 갈림"));
       return { label: theme.label, chat: chatLine, tci: tciLine, saju: sajuLine, agree };
     }
 
