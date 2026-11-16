@@ -523,7 +523,7 @@
       </div>
 
       <div id="maskedPreviewWrapper" style="display: none; margin-top: 14px;">
-        <label class="form-label">🔒 마스킹 처리된 대화 원문 미리보기 (개인정보 보호 적용)</label>
+        <label class="form-label">마스킹 처리된 대화 원문 미리보기 (개인정보 보호 적용)</label>
         <div id="maskedChatPreview" class="pii-preview"></div>
       </div>
     </section>
@@ -1602,7 +1602,7 @@
         const vals = theme.tciAreas.map(a => tci[a] ? tci[a].score : null).filter(v => v !== null);
         if (vals.length) {
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-          tciDir = avg >= 3.5 ? "high" : avg <= 2.5 ? "low" : "mid";
+          tciDir = avg >= 3.5 ? "high" : avg < 2.5 ? "low" : "mid";
         }
         tciLine = theme.tciAreas.map(a => tci[a] ? `${a}: ${tci[a].label} (${tci[a].score})` : `${a}: 미응답`).join(" · ");
       }
@@ -1842,18 +1842,27 @@
     if (btnOneShot) {
       btnOneShot.addEventListener("click", () => {
         const hasText = rawChatInput.value.trim().length > 0;
-        if (hasText) runAnalysis();
+        if (hasText) {
+          const ok = runAnalysis();
+          if (!ok) return; // 대화 분석 중단 시 이후 흐름도 중단
+        }
+        let sajuDone = false;
         if (document.getElementById("v2BirthDate").value) {
           if (!calcSajuFromInputs()) return;
+          sajuDone = true;
         }
         if (tciAllAnswered()) {
           submitTci();
-          openJegalReport();
-          alert("전체 리포트가 준비됐습니다. 아래에서 단계별로 확인해주세요.");
+          if (sajuDone) {
+            openJegalReport();
+            alert("전체 리포트가 준비됐습니다. 아래에서 단계별로 확인해주세요.");
+          } else {
+            alert("대화와 TCI 분석이 완료됐습니다. 생년월일을 입력해 명식 계산을 진행하면 제갈량 리포트까지 완성됩니다.");
+          }
         } else {
           oneShotPending = true;
           const tr = document.getElementById("tciResult");
-          if (tr) tr.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted);\">TCI 12문항만 답하면 채점·3소스 비교·제갈량 리포트가 자동으로 이어집니다.</p>";
+          if (tr) tr.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted);\">TCI 12문항만 답하면 채점·3소스 비교가 자동으로 이어집니다" + (sajuDone ? "(제갈량 리포트 포함)." : ".") + "</p>";
           document.getElementById("tciQuestions").scrollIntoView({ behavior: "smooth" });
         }
       });
@@ -2212,6 +2221,14 @@
 
     rawChatInput.addEventListener("input", onChatTextChange);
 
+    // 한방에 대기 상태는 입력 변경 시 해제한다(이전 실행 상태 재사용 금지)
+    function resetOneShotPending() {
+      oneShotPending = false;
+    }
+    document.getElementById("v2BirthDate").addEventListener("change", resetOneShotPending);
+    document.getElementById("v2BirthTime").addEventListener("change", resetOneShotPending);
+    document.getElementById("v2NoTime").addEventListener("change", resetOneShotPending);
+
     speakerSelect.addEventListener("change", (e) => {
       selectedSpeaker = e.target.value;
       resetAnalysisState();
@@ -2340,7 +2357,7 @@
           speakerSelect.style.outline = "3px solid var(--primary)";
           setTimeout(() => { if (speakerSelect) speakerSelect.style.outline = ""; }, 2500);
         }
-        return;
+        return false;
       }
 
       const targetMsgs = parsed.messages.filter(m => m.isTarget);
@@ -2594,7 +2611,7 @@
       // 신박한 태그라인 (형님 확정: 컨텐츠는 신박하고 재미있게)
       ctx.fillStyle = "#4F46E5";
       ctx.font = "bold 18px sans-serif";
-      const cardTagline = mbti.isLack ? "네 카톡, 아직 말해줄 게 남았어요" : "네 카톡이 너를 말해줬어요 💬";
+      const cardTagline = mbti.isLack ? "네 카톡, 아직 말해줄 게 남았어요" : "네 카톡이 너를 말해줬어요";
       ctx.fillText(cardTagline, W / 2, 815);
 
       // 하단 카피라이트 및 비진단 안내
