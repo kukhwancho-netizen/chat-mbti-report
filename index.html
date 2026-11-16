@@ -280,7 +280,7 @@
       border: none;
       border-bottom: 1px solid var(--border);
       border-radius: 0;
-      padding: 12px 0;
+      padding: 8px 0;
     }
 
     .axis-labels {
@@ -403,10 +403,8 @@
     }
 
     .highlight {
-      background-color: #FEF08A;
-      padding: 0 2px;
-      font-weight: 600;
-      border-radius: 2px;
+      font-weight: 700;
+      color: var(--text-main);
     }
 
     /* 캔버스 및 공유카드 */
@@ -667,7 +665,7 @@
       <section class="card">
         <div class="card-title">근거 문장</div>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
-          각 축 판정에 유의미하게 기여한 실제 발화 문장입니다. 개인정보는 완벽히 마스킹된 상태로 인용됩니다.
+          각 축 판정에 유의미하게 기여한 실제 발화 문장입니다. 개인정보는 마스킹된 상태로 인용됩니다.
         </p>
         <div class="quote-grid" id="quoteCardsGrid">
           <!-- 동적으로 채워짐 -->
@@ -1849,11 +1847,10 @@
       renderAxisUI(mbti.axisJP, "valJ", "valP", "barJ", "barP", "evidenceJ", "statusJ", "판단(J)", "인식(P)", "생활 양식 및 행동");
 
       const overallBadge = document.getElementById("overallConfidenceBadge");
-      const totalQuotes = mbti.axisEI.validQuotes + mbti.axisSN.validQuotes + mbti.axisTF.validQuotes + mbti.axisJP.validQuotes;
       if (mbti.isLack) {
         overallBadge.textContent = "근거 부족 (대화 추가 필요)";
       } else {
-        overallBadge.textContent = `근거 문장 총 ${totalQuotes}개 기반`;
+        overallBadge.textContent = "규칙 기반 추정 결과";
       }
 
       // 4. 원문 근거 인용 카드
