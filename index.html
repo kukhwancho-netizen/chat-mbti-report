@@ -585,8 +585,8 @@
       <!-- 4축 MBTI 스펙트럼 및 신뢰도 -->
       <section class="card">
         <div class="card-title">
-          <span>🧭 4축 성향 스펙트럼 & 신뢰도 분석</span>
-          <span id="overallConfidenceBadge" class="status-badge status-ok">신뢰도 양호</span>
+          <span>🧭 4축 성향 스펙트럼 & 근거 충분도 분석</span>
+          <span id="overallConfidenceBadge" class="status-badge status-ok">근거 충분도 양호</span>
         </div>
         <div class="axis-container" id="axisBarsContainer">
           <!-- E/I Axis -->
@@ -711,7 +711,7 @@
               🔓 데모로 종합 화면 미리보기 — 실제 결제 없음
             </button>
           </div>
-          <div style="font-size: 0.75rem; color: #B45309; margin-top: 10px; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+          <div id="paywallDemoNotice" style="font-size: 0.75rem; color: #B45309; margin-top: 10px; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5;">
             ⚠️ 데모 모드의 잠금 해제 토큰은 브라우저(localStorage)에만 저장되며 실제 결제 인증이 아닙니다(조작 가능).
             실서비스는 서버 결제 승인 검증 후 열람권을 발급해야 합니다 — README 「결제 연동 가이드」 참고.
           </div>
@@ -783,6 +783,8 @@
 상상만 해도 가슴 뛰고 멋진 영감과 직관적 아이디어가 마구 샘솟는 기분이에요 ㅋㅋㅋ
 [오전 10:25] 김철수 : 유진님의 영감도 좋지만, 논리적인 문제 해결과 객관적인 판단 기준이 먼저 바로잡혀야 프로젝트 오류가 없습니다.
 합리적인 분석과 원칙 시스템을 확립하는 것이 최우선 과제입니다.
+[오전 10:26] 김철수 : 그래도 워크숍은 사람들과 함께 모여서 진행하는 모임 자체가 좋아요.
+대화하면서 에너지 주고받는 분위기 덕분에 팀 파이팅도 살아난다고 생각해요.
 [오전 10:27] 이영희 : 에이 철수님 너무 딱딱하게 원칙만 따지지 마세요 ㅠㅠ
 팀원들 마음과 감정도 살피고, 서로 따뜻하게 공감해주고 배려하는 분위기가 훨씬 중요하잖아요! 다들 지쳐있는데 힐링도 필요해요.
 [오전 10:30] 최유진 : 맞아요 영희님 말씀에 완전 공감해요 ㅎㅎ 마음이 편해야 아이디어도 잘 나오죠.
@@ -1263,7 +1265,7 @@
       };
 
       // 문장 분리 후 키워드 탐색 (Codex 자문 반영: 반복 문장 누적·부정문 채택·부분문자열 매칭 결함 수정)
-      const NEGATION_RE = /(싫|아니|않|못|말고|그만|취소|거절|반대)/;
+      const NEGATION_RE = /(싫|아니[다야에요]|않[다했어아는은]|못[하했]|말고|그만해|그만두|취소|거절|반대)/;
       const scoredSentences = new Set();
       targetMsgs.forEach(m => {
         const sentences = m.maskedContent.split(/(?<=[.?!~])\s+|\n+/);
@@ -1288,7 +1290,9 @@
               if (kw.length === 1) {
                 // 1자 키워드는 어절 경계에서만 인정한다(예: '편집' 안의 '집' 제외)
                 const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                const mm = new RegExp("(?<![가-힣a-zA-Z0-9])" + esc + "(?![가-힣a-zA-Z0-9])").exec(s);
+                // 조사(에서·에·를 등) 결합은 허용하고, 어간에 바로 붙는 경우(집결)만 거부한다
+                const JOSA = "(?:에서|으로|로|에|을|를|이|가|은|는|도|와|과|만|랑|부터|까지|하고|에다)?";
+                const mm = new RegExp("(?<![가-힣a-zA-Z0-9])" + esc + JOSA + "(?![가-힣])").exec(s);
                 if (mm) idx = mm.index;
               } else {
                 idx = s.indexOf(kw);
@@ -1494,6 +1498,10 @@
 
       if (paywallDemoBadge) {
         paywallDemoBadge.style.display = TOSS_PAYMENTS_CLIENT_KEY ? "none" : "inline-block";
+      }
+      const demoNotice = document.getElementById("paywallDemoNotice");
+      if (demoNotice) {
+        demoNotice.style.display = TOSS_PAYMENTS_CLIENT_KEY ? "none" : "block";
       }
       if (btnUnlockPaywall) {
         btnUnlockPaywall.textContent = TOSS_PAYMENTS_CLIENT_KEY
@@ -1874,7 +1882,7 @@
         overallBadge.textContent = "근거 부족 (대화 추가 필요)";
       } else {
         overallBadge.className = "status-badge status-ok";
-        overallBadge.textContent = "분석 신뢰도 양호";
+        overallBadge.textContent = "근거 충분도 양호";
       }
 
       // 4. 원문 근거 인용 카드
