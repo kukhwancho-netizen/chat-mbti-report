@@ -1109,7 +1109,9 @@
       // P1-2: parsedData에 원문 content/rawSpeaker를 보존하지 않고 마스킹 결과만 보존
       const maskedMessages = messages.map(m => {
         const maskedSpeaker = speakerMapping[m.rawSpeaker] || m.rawSpeaker;
-        const maskedContent = maskPII(m.rawContent);
+        // 본문 속 화자 이름·호칭 변형(철수님, 영희씨, 유진아 등)도 치환한다
+        let maskedContent = maskPII(m.rawContent);
+        maskedContent = maskSpeakerNamesInText(maskedContent, speakerSet, targetRaw, speakerMapping);
         return {
           date: m.date,
           hour: m.hour,
@@ -1157,7 +1159,8 @@
       targetMsgs.forEach(m => {
         const txt = m.maskedContent;
         totalChars += txt.length;
-        const laughs = (txt.match(/[ㅋㅎ하호]/g) || []).length;
+        // 웃음 표기만 센다(ㅋ·ㅎ 자모 + 반복 의성어) — 안녕하세요의 '하' 같은 일반 음절 제외
+        const laughs = (txt.match(/[ㅋㅎ]/g) || []).length + (txt.match(/하하|호호|훗|헤헤|키키/g) || []).length;
         totalLaughs += laughs;
         const emojis = (txt.match(emojiRegex) || []).length;
         totalEmojis += emojis;
@@ -1722,6 +1725,27 @@
       document.body.removeChild(a);
     });
 
+    // 본문 속 화자 이름·호칭 변형 마스킹 (Claude 최종 검토 반영: 철수님·영희씨·유진아 등)
+    function maskSpeakerNamesInText(text, speakerSet, targetRaw, speakerMapping) {
+      if (!text) return "";
+      let masked = text;
+      const SUFFIX = "(?:님|씨|야|아|이|가|은|는|을|를|도|와|과|랑|에|에서|만|부터|까지|하고|바에|한테)";
+      speakerSet.forEach(rawName => {
+        if (!rawName || rawName.length < 2) return;
+        const mapped = speakerMapping[rawName] || rawName;
+        // 전체 이름과 성을 뺀 이름(3자 이상) 변형을 모두 치환
+        const variants = [rawName];
+        if (rawName.length >= 3) variants.push(rawName.slice(1));
+        variants.forEach(variant => {
+          const esc = variant.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          // 한글 단어 중간에 끼린 경우는 제외(??앞에 한글이 오면 스킵), 뒤에 조사·호칭이 붙어도 함께 치환
+          const re = new RegExp("(?<![가-힣a-zA-Z0-9])(" + esc + ")(" + SUFFIX + "?)", "g");
+          masked = masked.replace(re, mapped + "$2");
+        });
+      });
+      return masked;
+    }
+
     // 파싱 및 개인정보 마스킹 실행
     function parseAndMask() {
       const text = rawChatInput.value;
@@ -2029,6 +2053,7 @@
         configurable: true
       });
       globalThis.maskPII = maskPII;
+      globalThis.maskSpeakerNamesInText = maskSpeakerNamesInText;
       globalThis.isDatePattern = isDatePattern;
       globalThis.splitHeaderAndContent = splitHeaderAndContent;
       globalThis.parseChatText = parseChatText;
@@ -2058,6 +2083,7 @@
         get parsedData() { return parsedData; },
         set parsedData(v) { parsedData = v; },
         maskPII,
+        maskSpeakerNamesInText,
         isDatePattern,
         splitHeaderAndContent,
         parseChatText,

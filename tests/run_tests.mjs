@@ -460,4 +460,28 @@ assert.strictEqual(selectEl.innerHTML, '', '화자 옵션이 추가된 경우 �
 
 console.log('PASS: Luna R6 회귀 (URL 레이블·빈 본문·드롭다운 감지) 통과');
 
+console.log('--- Test Suite 13: Claude 최종 검토 반영 (본문 호칭 마스킹·웃음 밀도) 검증 ---');
+
+// 13-1. 본문 속 화자 이름·호칭 변형(철수님·영희씨·유진아)이 마스킹된다
+const kakaoStyleChat = [
+  '--------------- 2026년 11월 14일 토요일 ---------------',
+  '[오전 10:15] 김철수 : 안녕하세요 여러분! 철수님은 일정 공유할게요.',
+  '[오전 10:18] 이영희 : 넵 영희씨도 준비할게요. 유진아 같이 해요!',
+  '[오전 10:20] 최유진 : 좋아요 유진은 콘셉트 담당할게요 ㅋㅋ'
+].join('\n');
+const honorParsed = parseChatText(kakaoStyleChat, '김철수');
+const allMaskedContent = honorParsed.messages.map(m => m.maskedContent).join(' | ');
+assert(!/철수님|영희씨/.test(allMaskedContent), '호칭이 붙은 화자 이름이 본문에 잔류하면 안 됩니다.');
+assert(allMaskedContent.includes('나(화자A)은') || allMaskedContent.includes('나(화자A)는') || !allMaskedContent.includes('철수'), '본인 이름도 마스킹되어야 합니다.');
+assert(!allMaskedContent.includes('영희') || allMaskedContent.includes('화자B'), '상대 이름은 화자 라벨로 치환되어야 합니다.');
+assert(allMaskedContent.includes('콘셉트'), '일반 단어는 보존되어야 합니다.');
+
+// 13-2. 웃음 밀도: 일반 음절 '하'(안녕하세요)는 웃음으로 세지 않는다
+const plainOnly = calculateMetrics([{ maskedContent: '안녕하세요 반갑습니다', isTarget: true, date: 'd', hour: 10, minute: 0 }]);
+assert.strictEqual(Number(plainOnly.laughDensity), 0, '안녕하세요의 하·호는 웃음으로 세지 않아야 합니다.');
+const laughOnly = calculateMetrics([{ maskedContent: 'ㅋㅋㅋ 하하 진짜 웃겨', isTarget: true, date: 'd', hour: 10, minute: 0 }]);
+assert(Number(laughOnly.laughDensity) > 0, 'ㅋㅋ·하하는 웃음으로 세어야 합니다.');
+
+console.log('PASS: Claude 최종 검토 반영 (본문 호칭 마스킹·웃음 밀도) 통과');
+
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
