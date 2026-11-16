@@ -499,7 +499,7 @@
     <!-- 서비스 헤더 -->
     <header>
       <h1>지피지기 백전백승</h1>
-      <p class="subtitle">카톡·지피티 대화 텍스트를 마스킹해 성향 경향을 분석합니다. 전송·저장 없이 브라우저에서만 동작합니다.</p>
+      <p class="subtitle">카톡·지피티 대화를 붙여넣으면 개인정보를 마스킹해 성향을 분석합니다. 대화는 전송·저장되지 않고 브라우저에서만 처리됩니다.</p>
     </header>
 
     <p class="notice-strip">입력한 대화는 이 기기에서만 처리되며 외부로 전송·저장되지 않습니다. 결과는 규칙 기반 관찰이며 공식 심리검사나 진단이 아닙니다.</p>
@@ -518,11 +518,11 @@
           </button>
         </div>
       </div>
-      <textarea id="rawChatInput" placeholder="카톡 내보내기 텍스트 또는 지피티(ChatGPT) 등 대화 텍스트를 붙여넣으세요...&#10;카톡 형식 예시:&#10;--------------- 2026년 11월 14일 토요일 ---------------&#10;[오전 10:15] 화자A : 안녕하세요! 이번 주말 일정 체크해봐요.&#10;일반 대화 형식(지피티 대화 복사 등) 예시:&#10;사용자: 요즘 내 대화 스타일 어때 보이면 말해줘&#10;ChatGPT: 메시지가 짧고 템포가 빠른 편이네요!"></textarea>
+      <textarea id="rawChatInput" placeholder="카톡 대화(내보내기 텍스트)나 지피티 대화를 붙여넣으세요. [시간] 이름 : 내용 또는 이름: 내용 형식이면 자동으로 인식합니다."></textarea>
       
       <div class="settings-row">
         <div class="form-group">
-          <label class="form-label" for="speakerSelect">누구의 성향을 볼까요? (본인 지정 — 필수)</label>
+          <label class="form-label" for="speakerSelect">본인 화자 선택 (필수)</label>
           <select id="speakerSelect">
             <option value="">대화를 입력하거나 파싱하면 화자 목록이 나타납니다</option>
           </select>
@@ -1835,12 +1835,11 @@
         document.getElementById(barRightId).style.width = `${axisData.rightRatio}%`;
 
         const stEl = document.getElementById(statusId);
+        stEl.textContent = "";
         if (axisData.isLack) {
-          stEl.textContent = "근거 부족";
-          document.getElementById(evidenceId).textContent = `${desc} (근거 부족 — 판단 보류)`;
+          document.getElementById(evidenceId).textContent = `${desc} — 판단 보류 (근거 부족)`;
         } else {
-          stEl.textContent = `근거 문장 ${axisData.validQuotes}개 기반`;
-          document.getElementById(evidenceId).textContent = `${desc} (${axisData.dominant} 쪽 관찰됨)`;
+          document.getElementById(evidenceId).textContent = `${desc} — ${axisData.dominant} 쪽 관찰됨 (근거 문장 ${axisData.validQuotes}개)`;
         }
       }
 
