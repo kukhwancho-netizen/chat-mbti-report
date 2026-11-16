@@ -79,6 +79,32 @@
     }
 
     /* 공지 배너 */
+    .v2-input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr minmax(110px, auto) auto minmax(110px, auto);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .v2-input-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .v2-input-grid button {
+        width: 100%;
+      }
+    }
+
+    .brand-copy {
+      font-size: 15px;
+      line-height: 24px;
+      color: var(--text-muted);
+      max-width: 560px;
+      margin: 12px auto 0;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
     .notice-strip {
       font-size: 14px;
       line-height: 22px;
@@ -478,6 +504,7 @@
     <header>
       <h1>지피지기 백전백승</h1>
       <p class="subtitle">카톡·지피티 대화를 붙여넣으면 개인정보를 마스킹해 성향을 분석합니다.</p>
+      <p class="brand-copy">90년대부터 궁금한 건, 대한민국에선 500원이었습니다 — "궁금해? 그럼 500원"이 유행어였던 시절의 그 질문을, 이제는 이 기기에서 무료로 풉니다.</p>
     </header>
 
     <p class="notice-strip">입력한 대화는 이 기기에서만 처리되며 외부로 전송·저장되지 않습니다. 결과는 규칙 기반 관찰이며 공식 심리검사나 진단이 아닙니다.</p>
@@ -690,13 +717,20 @@
         </div>
         <button id="btnOneShot" class="btn-primary" style="width: 100%; margin-bottom: 12px;">한방에 전체 리포트 만들기 (대화 + 사주 + TCI)</button>
         <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기 근사(경계일 ±1일 가능)·시간대 UTC+9 고정·민간시 기준(진태양시 미적용).</p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; margin-bottom: 8px;">
+        <div class="v2-input-grid">
           <input type="date" id="v2BirthDate" aria-label="생년월일">
           <input type="time" id="v2BirthTime" aria-label="출생 시간">
+          <select id="v2Gender" aria-label="성별 (대운 방향 계산용)">
+            <option value="">성별 미입력</option>
+            <option value="M">남성</option>
+            <option value="F">여성</option>
+          </select>
           <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px;"><input type="checkbox" id="v2NoTime"> 시간 모름</label>
           <button id="btnCalcSaju" class="btn-primary">명식 계산</button>
         </div>
+        <p style="font-size: 12px; line-height: 18px; color: var(--text-muted); margin: 0 0 8px;">성별을 입력하면 10년 단위 대운까지 계산합니다(전통 방식: 양년 남·음년 여 순행, 음년 남·양년 여 역행).</p>
         <div id="sajuResult"></div>
+        <div id="daewunResult"></div>
         <div style="margin-top: 24px;">
           <div class="card-title" style="padding: 0; margin-bottom: 10px;">
             <span>TCI식 미니 자기보고 (12문항 · 5점 척도)</span>
@@ -1928,6 +1962,7 @@
           <div style="font-size: 0.9rem; margin-bottom: 6px;">${i + 1}. ${q.text}</div>
           <div style="display: flex; gap: 10px; font-size: 13px; color: var(--text-muted);">
             ${[1, 2, 3, 4, 5].map(v => `<label style="display: inline-flex; align-items: center; gap: 4px;"><input type="radio" name="tciq${i}" value="${v}">${v}</label>`).join("")}
+            <span style="margin-left: 4px;">(1 전혀 아니다 — 5 매우 그렇다)</span>
           </div>
         </div>`).join("");
     }
@@ -1943,9 +1978,61 @@
       const pillars = calcPillars(parts[0], parts[1], parts[2], hour, noTime || !tv);
       v2State.saju = sajuSummary(pillars);
       renderSaju(pillars);
+      const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value);
+      renderDaewun(dw, parts[0]);
       renderFusionIfReady();
       return true;
     }
+    // 대운·연운 — ruleVersion v2-approx (근사 절기 기반, 대운수 ±0.3년 오차 가능)
+    function calcDaewun(pillars, birthY, birthM, birthD, gender) {
+      const yearGan = pillars.year.gz % 10;
+      const yangYear = yearGan % 2 === 0; // 甲丙戊庚壬 = 양간
+      const forward = gender === "" ? null : ((yangYear && gender === "M") || (!yangYear && gender === "F"));
+      if (forward === null) return null;
+      const termDay = TERM_DAY[birthM];
+      const diffDays = forward ? ((termDay + 30 - birthD) % 30) : ((birthD - termDay + 30) % 30);
+      const startAge = Math.max(1, Math.round(diffDays / 3));
+      const list = [];
+      for (let i = 0; i < 8; i++) {
+        const raw = forward ? (pillars.month.gz + 1 + i) : (pillars.month.gz - 1 - i);
+        const gz = ((raw % 60) + 60) % 60;
+        list.push({ age: startAge + i * 10, gan: GAN[gz % 10], ji: JI[gz % 12] });
+      }
+      return { startAge, forward, list, ruleVersion: "v2-approx" };
+    }
+
+    function renderDaewun(dw, birthY) {
+      const box = document.getElementById("daewunResult");
+      if (!box) return;
+      if (!dw) {
+        box.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;\">대운은 성별 입력 시 계산됩니다(전통 방식의 순행·역행 판단에 필요).</p>";
+        return;
+      }
+      const thisYear = new Date().getFullYear();
+      const age = thisYear - birthY;
+      let rows = "";
+      dw.list.forEach(d => {
+        const inRange = age >= d.age && age < d.age + 10;
+        rows += `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 6px 0; font-size: 0.9rem;${inRange ? " font-weight: 700;" : ""}">
+          <span>${d.age}세~${d.age + 9}세 ${d.gan}${d.ji}${inRange ? " — 현재 구간" : ""}</span>
+        </div>`;
+      });
+      // 향후 10년 세운(연간지) — 전통 간지 순환 적용
+      let yeonunRows = "";
+      for (let i = 0; i < 10; i++) {
+        const y = thisYear + i;
+        const idx = ((y - 4) % 60 + 60) % 60;
+        yeonunRows += `<span style="display: inline-block; margin: 2px 10px 2px 0; color: var(--text-muted);">${y} ${GAN[idx % 10]}${JI[idx % 12]}</span>`;
+      }
+      box.innerHTML = `
+        <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-top: 12px;">
+          <div style="font-weight: 700; margin-bottom: 8px;">대운 — 10년 단위 흐름 <span style="font-size: 0.8rem; color: var(--text-muted);">(${dw.ruleVersion}, ${dw.forward ? "순행" : "역행"})</span></div>
+          ${rows}
+          <div style="font-size: 0.85rem; margin-top: 8px;"><strong>향후 10년 세운:</strong> ${yeonunRows}</div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">대운수는 근사 절기 기반이라 ±0.3년 오차 가능. 구간 해석은 관행적 프레임이며 확정 운세가 아닙니다.</p>
+        </div>`;
+    }
+
     if (btnCalcSaju) {
       btnCalcSaju.addEventListener("click", calcSajuFromInputs);
     }
@@ -2346,7 +2433,7 @@
       const parsed = parseAndMask();
       if (!parsed || parsed.messages.length === 0) {
         alert("대화 텍스트를 먼저 입력해주세요.");
-        return;
+        return false;
       }
       // 본인 화자 확인 필수(Codex 자문 반영): 여러 화자가 있는데 본인을 지정하지 않으면
       // 첫 화자가 자동 선택되어 셀프 분석이 어긋난다 — 분석을 중단하고 선택을 요구한다.
@@ -2363,7 +2450,7 @@
       const targetMsgs = parsed.messages.filter(m => m.isTarget);
       if (targetMsgs.length === 0) {
         alert("선택된 화자의 메시지가 없습니다. 상단에서 분석 대상 화자를 선택해주세요.");
-        return;
+        return false;
       }
 
       const metrics = calculateMetrics(parsed.messages);
@@ -2481,6 +2568,7 @@
 
       // 스크롤 이동
       reportSection.scrollIntoView({ behavior: "smooth" });
+      return true;
     }
 
     // Canvas 공유 카드 그리기 (P1-1, P2-6)
@@ -2646,6 +2734,7 @@
       globalThis.tenGod = tenGod;
       globalThis.TCI_QUESTIONS = TCI_QUESTIONS;
       globalThis.tciScore = tciScore;
+      globalThis.calcDaewun = calcDaewun;
       globalThis.buildJegalReport = buildJegalReport;
       globalThis.JEGAL_GLOSSARY = JEGAL_GLOSSARY;
       globalThis.maskSpeakerNamesInText = maskSpeakerNamesInText;
@@ -2682,6 +2771,7 @@
         tenGod,
         TCI_QUESTIONS,
         tciScore,
+        calcDaewun,
         buildJegalReport,
         JEGAL_GLOSSARY,
         maskSpeakerNamesInText,

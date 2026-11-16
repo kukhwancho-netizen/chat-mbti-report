@@ -614,4 +614,99 @@ assert.strictEqual(lo['새로움 추구'].label, '낮음', '2점 평균은 낮�
 
 console.log('PASS: 한방에 원샷(방향 3상태·관점 비교·근거부족 보류) 통과');
 
+
+console.log('--- Test Suite 18: 원샷 체인 통합 스모크 (한방에 → 자동 완성) 검증 ---');
+
+// 리스너 캡처 버전의 별도 sandbox (기존 mock은 no-op 리스너라 여기서만 캡처형 사용)
+const capListeners = new Map();
+const capElements = new Map();
+const capMk = (id = '') => ({
+  id, style: {}, classList: { add: () => {}, remove: () => {} },
+  value: '', textContent: '', innerHTML: '', appendChild: () => {}, removeChild: () => {},
+  scrollIntoView: () => {}, focus: () => {},
+  addEventListener: (type, cb) => { capListeners.set(id + ':' + type, cb); },
+  getContext: () => new Proxy({ createLinearGradient: () => ({ addColorStop: () => {} }), measureText: () => ({ width: 10 }) }, { get: (t, k) => (k in t ? t[k] : (() => {})) }), width: 800, height: 960
+});
+const capSandbox = {
+  console,
+  setTimeout: (fn) => {},
+  document: {
+    getElementById: (id) => { if (!capElements.has(id)) capElements.set(id, capMk(id)); return capElements.get(id); },
+    createElement: (t) => capMk(t), body: capMk('body'),
+    querySelector: () => null, querySelectorAll: () => []
+  },
+  localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+  alert: () => {}
+};
+vm.createContext(capSandbox);
+vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1], capSandbox);
+
+// 1. 원샷 버튼 핸들러가 등록됐는지
+const oneShotHandler = capListeners.get('btnOneShot:click');
+assert(oneShotHandler, 'btnOneShot click 핸들러가 등록되어야 합니다.');
+
+// 2. 체인 실행: 샘플+화자+생년 세팅 → 원샷 1클릭 → 대화 리포트·명식·TCI 안내
+const capRaw = capElements.get('rawChatInput');
+const capSel = capElements.get('speakerSelect');
+capRaw.value = '--------------- 2026년 11월 14일 토요일 ---------------\n[오전 10:15] 홍길동 : 계획을 세우고 체계적으로 정리하는 게 편해 ㅋㅋ\n[오전 10:20] 성춘향 : 오케이 그렇게 하자!';
+capSel.value = '홍길동';
+const selChange = capListeners.get('speakerSelect:change');
+assert(selChange, 'speakerSelect change 핸들러가 등록되어야 합니다.');
+selChange({ target: { value: '홍길동' } });
+capElements.get('v2BirthDate').value = '1990-05-15';
+capElements.get('v2BirthTime').value = '14:30';
+oneShotHandler();
+
+const capReport = capElements.get('reportSection');
+assert.strictEqual(capReport.style.display, 'block', '원샷 1클릭으로 대화 리포트가 렌더되어야 합니다.');
+const capSajuBox = capElements.get('sajuResult');
+assert(capSajuBox.innerHTML.includes('명식'), '원샷 1클릭으로 명식이 계산·렌더되어야 합니다.');
+const capTci = capElements.get('tciResult');
+assert(capTci.innerHTML.includes('자동으로 이어집니다'), 'TCI 미응답 상태에서 자동 완성 안내가 표시되어야 합니다.');
+
+// 3. TCI 전부 응답 → change 위임 핸들러 → 자동 채점·융합·제갈량 1단계
+const capChange = capListeners.get('tciQuestions:change');
+assert(capChange, 'tciQuestions change 위임 핸들러가 등록되어야 합니다.');
+// querySelector 라디오 mock — 12문항 응답 시뮬레이션
+let qIndex = 0;
+capSandbox.document.querySelector = (sel) => {
+  const m = sel.match(/tciq(\d+)/);
+  if (!m) return null;
+  return { checked: true, value: '4' };
+};
+capChange();
+
+const capFusion = capElements.get('fusionBox');
+assert(capFusion.innerHTML.includes('3소스 비교'), 'TCI 완료 후 3소스 비교가 자동 렌더되어야 합니다.');
+const capJegal = capElements.get('jegalReportBox');
+assert(capJegal.innerHTML.includes('출발 지형도'), '제갈량 리포트 1단계가 자동 오픈되어야 합니다.');
+
+console.log('PASS: 원샷 체인 통합 스모크 (한방에 → 자동 완성) 통과');
+
+
+console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
+
+console.log('--- Test Suite 19: 대운·연운 계산 (간지 시퀀스·방향·경계) 검증 ---');
+
+const { calcDaewun } = sandbox;
+assert(typeof calcDaewun === 'function', 'calcDaewun이 로드되지 않았습니다.');
+
+// 19-1. 1990-05-15 남성: 庚午년(庚=양간) → 양년 남 = 순행, 월주 辛巳 → 다음 壬午부터
+const dw = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "M");
+assert(dw && dw.forward === true, '양년 남성은 순행이어야 합니다.');
+assert.strictEqual(dw.list[0].gan + dw.list[0].ji, '壬午', '월주 辛巳 순행 첫 대운은 壬午여야 합니다.');
+assert.strictEqual(dw.list[1].gan + dw.list[1].ji, '癸未', '두 번째 대운은 癸未여야 합니다.');
+assert(dw.startAge >= 1 && dw.startAge <= 12, '대운수는 1~12세 범위여야 합니다(근사).');
+assert.strictEqual(dw.list.length, 8, '대운은 8구간(80년)입니다.');
+
+// 19-2. 역행: 1990-05-15 여성 → 음년? 庚=양간이므로 양년 여 = 역행
+const dwF = calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, "F");
+assert(dwF.forward === false, '양년 여성은 역행이어야 합니다.');
+assert.strictEqual(dwF.list[0].gan + dwF.list[0].ji, '庚辰', '월주 辛巳 역행 첫 대운은 庚辰이어야 합니다.');
+
+// 19-3. 성별 미입력 → null (대운 미계산 안내)
+assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, ""), null, '성별 미입력 시 대운은 null이어야 합니다.');
+
+console.log('PASS: 대운·연운 계산 (간지 시퀀스·방향·경계) 통과');
+
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
