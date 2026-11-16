@@ -7,20 +7,20 @@
   <style>
     :root {
       /* GPT 디자인 자문 스펙: 웜 뉴트럴 라이트 + 바이올렛 단일 포인트 */
-      --primary: #18181B;
-      --primary-hover: #000000;
-      --primary-light: #F1F1F4;
-      --bg: #F7F7F5;
+      --primary: #1D4ED8;
+      --primary-hover: #1E40AF;
+      --primary-light: #EEF3FF;
+      --bg: #F5F6F8;
       --card-bg: #FFFFFF;
-      --text-main: #18181B;
-      --text-muted: #62626B;
-      --border: #E4E4E7;
-      --surface-muted: #F1F1F4;
-      --input-bg: #FAFAFB;
-      --accent: #A1A1AA;
+      --text-main: #182230;
+      --text-muted: #526174;
+      --border: #D9E0E8;
+      --surface-muted: #F0F3F7;
+      --input-bg: #FFFFFF;
+      --accent: #D9E0E8;
       --danger: #B91C1C;
-      --radius: 8px;
-      --radius-inner: 6px;
+      --radius: 12px;
+      --radius-inner: 10px;
       --shadow: none;
       --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.06);
     }
@@ -48,8 +48,33 @@
     /* 헤더 및 안내문 */
     header {
       text-align: center;
-      margin-bottom: 32px;
-      padding-top: 32px;
+      margin-bottom: 24px;
+      padding-top: 24px;
+      max-width: 840px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .brand-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    h1 {
+      font-size: 32px;
+      line-height: 42px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      line-height: 28px;
+    }
+
+    .hero .input-focus-area {
+      outline: none;
     }
 
     .badge-pill {
@@ -64,10 +89,10 @@
     }
 
     h1 {
-      font-size: 48px;
-      line-height: 60px;
+      font-size: 32px;
+      line-height: 42px;
       font-weight: 700;
-      letter-spacing: -0.025em;
+      letter-spacing: -0.02em;
       margin-bottom: 12px;
     }
 
@@ -109,10 +134,10 @@
       font-size: 14px;
       line-height: 22px;
       color: var(--text-muted);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 0;
-      margin-bottom: 24px;
+      border-top: none;
+      border-bottom: none;
+      padding: 4px 0 8px;
+      margin-bottom: 16px;
     }
 
     .jegal-gloss {
@@ -370,8 +395,11 @@
     /* 정량 지표 패널 */
     .metric-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
+    }
+
+    .metric-box-x {
       margin-bottom: 24px;
     }
 
@@ -502,9 +530,9 @@
   <div class="container">
     <!-- 서비스 헤더 -->
     <header>
-      <h1>지피지기 백전백승</h1>
-      <p class="subtitle">카톡·지피티 대화를 붙여넣으면 개인정보를 마스킹해 성향을 분석합니다.</p>
-      <p class="brand-copy">90년대부터 궁금한 건, 대한민국에선 500원이었습니다 — "궁금해? 그럼 500원"이 유행어였던 시절의 그 질문을, 이제는 이 기기에서 무료로 풉니다.</p>
+      <div class="brand-name">지피지기 백전백승</div>
+      <h1>대화에서 나의 성향을 알아보세요</h1>
+      <p class="subtitle">카톡·지피티 대화를 붙여넣으면 개인정보를 자동으로 가리고, 대화 패턴·사주·자기보고를 나란히 비교한 리포트를 만들어 드립니다. 대화는 이 기기에서만 처리됩니다.</p>
     </header>
 
     <p class="notice-strip">입력한 대화는 이 기기에서만 처리되며 외부로 전송·저장되지 않습니다. 결과는 규칙 기반 관찰이며 공식 심리검사나 진단이 아닙니다.</p>
@@ -570,29 +598,34 @@
         <div class="metric-grid">
           <div class="metric-box">
             <div class="metric-box-val" id="metricMsgCount">0</div>
-            <div class="metric-box-label">발화 메시지 수</div>
+            <div class="metric-box-label">분석 발화 수</div>
           </div>
           <div class="metric-box">
             <div class="metric-box-val" id="metricAvgLen">0자</div>
             <div class="metric-box-label">평균 발화 길이</div>
           </div>
           <div class="metric-box">
-            <div class="metric-box-val" id="metricInitiateRate">0%</div>
-            <div class="metric-box-label">대화 개시율</div>
-          </div>
-          <div class="metric-box">
             <div class="metric-box-val" id="metricAvgLatency">0분</div>
-            <div class="metric-box-label">평균 응답 지연</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-box-val" id="metricLaughDensity">0%</div>
-            <div class="metric-box-label">웃음(ㅋ/ㅎ) 밀도</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-box-val" id="metricEmojiDensity">0%</div>
-            <div class="metric-box-label">이모지/기호 밀도</div>
+            <div class="metric-box-label">평균 응답 시간</div>
           </div>
         </div>
+        <details style="margin-top: 12px;">
+          <summary style="cursor: pointer; font-size: 14px; color: var(--primary); font-weight: 600;">대화 습관 상세 (개시율 · 웃음 · 이모지 밀도)</summary>
+          <div class="metric-grid" style="margin-top: 12px;">
+            <div class="metric-box">
+              <div class="metric-box-val" id="metricInitiateRate">0%</div>
+              <div class="metric-box-label">대화 개시율</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-val" id="metricLaughDensity">0%</div>
+              <div class="metric-box-label">웃음(ㅋ/ㅎ) 밀도</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-box-val" id="metricEmojiDensity">0%</div>
+              <div class="metric-box-label">이모지/기호 밀도</div>
+            </div>
+          </div>
+        </details>
       </section>
 
       <!-- 4축 MBTI 스펙트럼 및 신뢰도 -->
@@ -717,17 +750,29 @@
         </div>
         <button id="btnOneShot" class="btn-primary" style="width: 100%; margin-bottom: 12px;">한방에 전체 리포트 만들기 (대화 + 사주 + TCI)</button>
         <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기는 태양 황경 계산(±10분 내외)·시간대는 현행 KST 기준(역사적 시간대·진태양시 미적용). 월주·대운의 입절 비교는 출생 시각을 시 단위로만 비교합니다(분 미포함).</p>
-        <div class="v2-input-grid">
-          <input type="date" id="v2BirthDate" aria-label="생년월일">
-          <input type="time" id="v2BirthTime" aria-label="출생 시간">
-          <select id="v2Gender" aria-label="성별 (대운 방향 계산용)">
-            <option value="">성별 미입력</option>
-            <option value="M">남성</option>
-            <option value="F">여성</option>
-          </select>
-          <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px;"><input type="checkbox" id="v2NoTime"> 시간 모름</label>
-          <button id="btnCalcSaju" class="btn-primary">명식 계산</button>
-        </div>
+        <details id="birthDetails" open>
+          <summary style="cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-main); padding: 6px 0;">출생정보 입력·변경</summary>
+          <div class="v2-input-grid" style="margin-top: 10px;">
+            <div>
+              <label for="v2BirthDate" style="display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 4px;">출생일</label>
+              <input type="date" id="v2BirthDate" aria-label="생년월일" style="width: 100%; height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;">
+            </div>
+            <div>
+              <label for="v2BirthTime" style="display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 4px;">출생 시간 (24시간제)</label>
+              <input type="time" id="v2BirthTime" aria-label="출생 시간" style="width: 100%; height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;">
+            </div>
+            <div>
+              <label for="v2Gender" style="display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 4px;">성별 (대운 방향)</label>
+              <select id="v2Gender" aria-label="성별 (대운 방향 계산용)" style="width: 100%; height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;">
+                <option value="">성별 미입력</option>
+                <option value="M">남성</option>
+                <option value="F">여성</option>
+              </select>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px;"><input type="checkbox" id="v2NoTime"> 시간 모름</div>
+            <button id="btnCalcSaju" class="btn-primary">명식 계산</button>
+          </div>
+        </details>
         <p style="font-size: 12px; line-height: 18px; color: var(--text-muted); margin: 0 0 8px;">성별을 입력하면 10년 단위 대운까지 계산합니다(전통 방식: 양년 남·음년 여 순행, 음년 남·양년 여 역행).</p>
         <div id="sajuResult"></div>
         <div id="daewunResult"></div>
@@ -742,16 +787,16 @@
         <div id="fusionBox"></div>
         <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px;">
           <div class="card-title" style="padding: 0; margin-bottom: 10px;">
-            <span>멘탈제갈량 리포트 — 전략가의 관찰</span>
-          </div>
-          <!-- 프리미엄 상세 리포트 결제 (500원 — 토스페이먼츠) -->
-          <div id="premiumGate" style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-top: 12px; text-align: center;">
-            <div style="font-weight: 700; margin-bottom: 6px;">멘탈제갈량 상세 리포트 (500원)</div>
-            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">명식·대운이 표기된 종합 요약 카드를 하나의 이미지(PNG)로 저장합니다. 결제 확인은 서버(Cloudflare Workers)에서 검증합니다.</p>
-            <button id="btnPremiumPay" class="btn-primary">500원 결제하고 상세 리포트 저장</button>
-            <div id="premiumStatus" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;"></div>
+            <span>종합 해석과 실행 제안</span>
           </div>
           <div id="jegalReportBox"></div>
+          <!-- 상세 리포트 저장 (핵심 내용을 읽은 뒤 배치) -->
+          <div id="premiumGate" style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-top: 12px; text-align: center;">
+            <div style="font-weight: 700; margin-bottom: 6px;">상세 리포트 (PNG 저장)</div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">명식·대운이 표기된 종합 요약 카드를 이미지로 저장합니다.</p>
+            <button id="btnPremiumPay" class="btn-primary">상세 리포트 체험</button>
+            <div id="premiumStatus" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;"></div>
+          </div>
         </div>
           <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 12px;">명리 용어는 전부 "쉽게 말해서" 풀이하고, 단계를 하나씩 열어 보는 구성이다. 운세 확정 표현 없이 관찰과 조언만 담는다.</p>
           <button id="btnJegalReport" class="btn-primary">멘탈제갈량 리포트 열기</button>
@@ -1907,26 +1952,19 @@
     function renderJegalStep() {
       const box = document.getElementById("jegalReportBox");
       if (!box || !jegalState.sections) return;
+      // 7단계 제목을 모두 노출하고 각각 펼침/접기 — 첫 단계만 기본 펼침
       let html = "";
-      jegalState.sections.slice(0, jegalState.shown).forEach(sec => {
-        html += `<div style="border-top: 1px solid var(--border); padding: 14px 0;">
-          <h4 style="font-size: 0.98rem; font-weight: 700; margin-bottom: 8px;">${sec.title}</h4>
-          ${sec.html}
+      jegalState.sections.forEach((sec, idx) => {
+        const open = idx < jegalState.shown;
+        html += `<div style="border-top: 1px solid var(--border);">
+          <details${open ? " open" : ""}>
+            <summary style="cursor: pointer; min-height: 52px; display: flex; align-items: center; font-size: 16px; font-weight: 600; color: ${open ? "var(--text-main)" : "var(--text-muted)"};">${sec.title}</summary>
+            <div style="padding: 12px 0;">${sec.html}</div>
+          </details>
         </div>`;
       });
-      if (jegalState.shown < jegalState.sections.length) {
-        html += `<button id="btnJegalNext" class="btn-primary">다음 단계 보기 (${jegalState.shown + 1}/${jegalState.sections.length})</button>`;
-      } else {
-        html += `<p style="font-size: 0.82rem; color: var(--text-muted);">— 멘탈제갈량 리포트 끝 —</p>`;
-      }
+      html += `<p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 12px;">각 단계를 눌러 펼쳐 보세요 — 전체 ${jegalState.sections.length}단계</p>`;
       box.innerHTML = html;
-      const next = document.getElementById("btnJegalNext");
-      if (next) {
-        next.addEventListener("click", () => {
-          jegalState.shown += 1;
-          renderJegalStep();
-        });
-      }
     }
 
     // ===================== 500원 프리미엄 결제 (토스페이먼츠 + Workers confirm) =====================
@@ -1957,14 +1995,14 @@
       const paid = premiumPaid || !!getPremiumToken();
       if (paid) {
         gate.style.borderColor = "#A7F3D0";
-        status.textContent = "상세 리포트 저장이 활성화되어 있습니다.";
+        status.textContent = "PNG 저장이 활성화되어 있습니다. 위 리포트 요약 카드의 저장 버튼을 이용해 주세요.";
         status.style.color = "#065F46";
         btn.style.display = "none";
       } else {
-        status.textContent = TOSS_CLIENT_KEY ? "결제창은 토스페이먼츠가 제공하며 승인은 서버에서 검증됩니다." : "데모 모드 — 실결제 연동 시 서버 검증으로 전환됩니다.";
+        status.textContent = TOSS_CLIENT_KEY ? "결제 후 24시간 동안 PNG 저장이 가능합니다. 결제 승인은 안전하게 검증됩니다." : "실제 결제 없이 체험할 수 있습니다.";
         status.style.color = "var(--text-muted)";
         btn.style.display = "";
-        btn.textContent = TOSS_CLIENT_KEY ? "500원 결제하고 상세 리포트 저장" : "데모로 상세 리포트 미리보기 — 실제 결제 없음";
+        btn.textContent = TOSS_CLIENT_KEY ? "500원 결제 후 PNG 저장" : "상세 리포트 체험 (실제 결제 없음)";
       }
     }
 
@@ -2024,7 +2062,7 @@
         premiumPaid = true;
         savePremiumToken(true);
         renderPremiumState();
-        alert("데모 모드: 실제 결제 없이 상세 리포트 저장이 활성화됐습니다.\n(브라우저 토큰이며 실결제 연동 시 서버 검증으로 전환됩니다)");
+        alert("체험 모드: 실제 결제 없이 PNG 저장이 활성화됐습니다.");
       });
     }
     // 결제 리다이렉트 복귀: 서버 confirm 결과가 있어야만 열람권 발급(성공 쿼리만으로 발급 금지)
@@ -2092,12 +2130,13 @@
       const summary = sajuSummary(pillars);
       const dayStem = pillars.day.gz % 10;
       const totalEl = Object.values(summary.elCount).reduce((a, b) => a + b, 0);
+      const OHANG_KR = { "木": "목", "火": "화", "土": "토", "金": "금", "水": "수" };
       let elBars = "";
       Object.keys(ELEMENT_NOTE).forEach(el => {
         const n = summary.elCount[el] || 0;
         const w = Math.round((n / totalEl) * 100);
         elBars += `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-          <span style="width: 28px; font-weight: 700;">${el}</span>
+          <span style="width: 48px; font-weight: 700;">${OHANG_KR[el]}(${el})</span>
           <div style="flex: 1; height: 10px; background: var(--surface-muted); border-radius: 5px; overflow: hidden;"><div style="width: ${w}%; height: 100%; background: var(--primary);"></div></div>
           <span style="width: 30px; text-align: right; font-variant-numeric: tabular-nums;">${n}개</span>
         </div>`;
@@ -2115,7 +2154,7 @@
       if (!notes) notes = "<div>특정 기운이 크게 몰려 있지 않은 균형 구조입니다.</div>";
       box.innerHTML = `
         <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px;">
-          <div style="font-weight: 700; margin-bottom: 8px;">명식 — ${pillarsRow} <span style="font-size: 0.8rem; color: var(--text-muted);">(${pillars.ruleVersion})</span></div>
+          <div style="font-weight: 700; margin-bottom: 8px;">명식 — ${pillarsRow}</div>
           <div style="margin-bottom: 10px;">일간 ${pillars.day.gan}: ${ILGAN_NOTE[dayStem]}</div>
           <div style="margin-bottom: 10px;">${elBars}</div>
           <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 8px;">${tenGodLines}</div>
@@ -2225,12 +2264,21 @@
       }
       const thisYear = new Date().getFullYear();
       const age = thisYear - birthY;
+      // 현재 구간과 앞뒤 구간을 우선 표시, 전체 목록은 접힘으로 제공
       let rows = "";
-      dw.list.forEach(d => {
+      dw.list.forEach((d, i) => {
         const inRange = age >= d.age && age < d.age + 10;
-        rows += `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 6px 0; font-size: 0.9rem;${inRange ? " font-weight: 700;" : ""}">
-          <span>${d.age}세~${d.age + 9}세 ${d.gan}${d.ji}${inRange ? " — 현재 구간" : ""}</span>
+        const nearby = inRange || (i > 0 && age >= dw.list[i - 1].age && age < dw.list[i - 1].age + 10) || (i < dw.list.length - 1 && age >= dw.list[i + 1].age && age < dw.list[i + 1].age + 10);
+        const rowHtml = `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 8px 0; font-size: 0.92rem;${inRange ? " font-weight: 700; border-left: 3px solid var(--primary); padding-left: 10px;" : ""}">
+          <span>${d.age}세~${d.age + 9}세 ${d.gan}${d.ji}${inRange ? " — 현재" : ""}</span>
         </div>`;
+        if (nearby || i < 2) {
+          rows += rowHtml;
+        } else {
+          if (!s.includes("DAEWUN_REST_OPEN_" + i)) {
+            rows += rowHtml;
+          }
+        }
       });
       // 향후 10년 세운(연간지) — 전통 간지 순환 적용
       let yeonunRows = "";
@@ -2241,7 +2289,7 @@
       }
       box.innerHTML = `
         <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-top: 12px;">
-          <div style="font-weight: 700; margin-bottom: 8px;">대운 — 10년 단위 흐름 <span style="font-size: 0.8rem; color: var(--text-muted);">(${dw.ruleVersion}, ${dw.forward ? "순행" : "역행"})</span></div>
+          <div style="font-weight: 700; margin-bottom: 8px;">대운 — 10년 단위 흐름 <span style="font-size: 0.8rem; color: var(--text-muted);">(${dw.forward ? "순행" : "역행"})</span></div>
           ${rows}
           <div style="font-size: 0.85rem; margin-top: 8px;"><strong>향후 10년 세운:</strong> ${yeonunRows}</div>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">절기는 태양 황경 계산(±10분 내외, ΔT·진태양시 미적용)이며 대운수·구간 해석은 관행적 프레임이고 확정 운세가 아닙니다.</p>
@@ -2697,15 +2745,14 @@
       const mbtiPersonaDisplay = document.getElementById("mbtiPersonaDisplay");
       const mbtiTargetDisplay = document.getElementById("mbtiTargetDisplay");
 
-      mbtiTypeDisplay.textContent = mbti.mbtiType;
+      mbtiTypeDisplay.textContent = mbti.isLack ? "판단 보류" : `${mbti.mbtiType}에 가까운 대화 패턴`;
+      mbtiTypeDisplay.style.color = mbti.isLack ? "var(--danger)" : "var(--text-main)";
       if (mbti.isLack) {
-        mbtiTypeDisplay.style.color = "var(--danger)";
-        mbtiPersonaDisplay.textContent = "대화량 또는 판정 근거 부족 (추가 대화 필요)";
+        mbtiPersonaDisplay.textContent = "대화량 또는 판정 근거 부족 — 추가 대화가 필요합니다";
       } else {
-        mbtiTypeDisplay.style.color = "var(--primary)";
         mbtiPersonaDisplay.textContent = PERSONA_MAP[mbti.rawType] || "자유로운 탐구자";
       }
-      mbtiTargetDisplay.textContent = `분석 대상: 나(화자A) | 총 ${metrics.count}개 발화 분석`;
+      mbtiTargetDisplay.textContent = `분석에 사용된 발화 ${metrics.count}개 · 이 대화에서 관찰된 패턴입니다 (규칙 기반 추정)`;
 
       // 2. 정량 지표
       document.getElementById("metricMsgCount").textContent = `${metrics.count}개`;
