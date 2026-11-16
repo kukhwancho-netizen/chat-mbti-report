@@ -30,7 +30,7 @@
 
 ## 기술
 
-- 서버리스 단일 HTML(HTML·CSS·Vanilla JS), 외부 스크립트·API 호출 없음
+- 기본 기능은 단일 HTML·Vanilla JS로 외부 호출 없음(500원 결제 시에만 토스 SDK 동적 로딩·Workers 승인 연결)
 - 회귀 테스트: `node tests/run_tests.mjs` (node 내장만 사용)
 - 자세한 개발·검증 이력은 내부 문서 참고
 

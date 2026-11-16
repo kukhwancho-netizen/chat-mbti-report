@@ -2161,6 +2161,7 @@
       const minuteOf = (!noTime && tv) ? parseInt(tv.split(":")[1], 10) : 0;
       const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value, hour, minuteOf);
       v2State.daewun = dw;
+      v2State.birthY = parts[0];
       renderDaewun(dw, parts[0]);
       renderFusionIfReady();
       return true;
@@ -2188,7 +2189,7 @@
       const t = findTermKST(termY, termM);
       if (!t) return null;
       const termJd = jdn(termY, termM, t.day) + (t.hour - 12) / 24 + t.minute / 1440;
-      const birthJd = jdn(birthY, birthM, birthD) + ((birthHour ?? 12) - 12) / 24;
+      const birthJd = jdn(birthY, birthM, birthD) + ((birthHour ?? 12) - 12) / 24 + (birthMin ?? 0) / 1440;
       const diffDays = Math.abs(termJd - birthJd);
       const startAge = Math.max(1, Math.round(diffDays / 3));
       const list = [];
@@ -2536,7 +2537,8 @@
         const noTime2 = document.getElementById("v2NoTime").checked;
         const hour2 = (!noTime2 && tv2) ? parseInt(tv2.split(":")[0], 10) : null;
         const pillars = calcPillars(dv[0], dv[1], dv[2], hour2, noTime2 || !tv2);
-        const dw = calcDaewun(pillars, dv[0], dv[1], dv[2], document.getElementById("v2Gender").value, hour2);
+        const min2 = (!noTime2 && tv2) ? parseInt(tv2.split(":")[1], 10) : 0;
+        const dw = calcDaewun(pillars, dv[0], dv[1], dv[2], document.getElementById("v2Gender").value, hour2, min2);
         renderDaewun(dw, dv[0]);
       }
     });
@@ -2803,6 +2805,7 @@
     // Canvas 공유 카드 그리기 (P1-1, P2-6)
     function drawShareCard(mbti, metrics, speakerLabel) {
       const thisYear2 = new Date().getFullYear();
+      const birthYear2 = v2State && v2State.birthY ? v2State.birthY : null;
       const ctx = shareCanvas.getContext("2d");
       const W = shareCanvas.width;  // 800
       const H = shareCanvas.height; // 960
@@ -2913,8 +2916,9 @@
         ctx.fillStyle = "#18181B";
         ctx.font = "bold 16px sans-serif";
         ctx.fillText(sajuLine, W / 2, 715);
-        if (v2State && v2State.daewun) {
-          const cur = v2State.daewun.list.find(d => thisYear2 >= d.age && thisYear2 < d.age + 10);
+        if (v2State && v2State.daewun && birthYear2 !== null) {
+          const ageNow = thisYear2 - birthYear2;
+          const cur = v2State.daewun.list.find(d => ageNow >= d.age && ageNow < d.age + 10);
           if (cur) {
             ctx.fillStyle = "#64748B";
             ctx.font = "14px sans-serif";
