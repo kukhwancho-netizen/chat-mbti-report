@@ -512,7 +512,7 @@
       
       <div class="settings-row">
         <div class="form-group">
-          <label class="form-label" for="speakerSelect">분석 대상 화자 선택 (본인 지정 시 '나(화자A)'로 치환)</label>
+          <label class="form-label" for="speakerSelect">분석 대상 화자 선택 (필수 — 본인 지정 시 '나(화자A)'로 치환)</label>
           <select id="speakerSelect">
             <option value="">대화를 입력하거나 파싱하면 화자 목록이 나타납니다</option>
           </select>
@@ -699,7 +699,7 @@
             MBTI+사주 종합 결과 보기가 잠겨 있습니다
           </h3>
           <p style="font-size: 0.88rem; color: #475569; max-width: 520px; margin: 0 auto 16px; line-height: 1.5;">
-            500원 결제 시 24시간 동안 나(화자A)의 축별 심층 해석 및 소통·갈등 관리 전략과 사주·TCI 융합 분석 안내를 자유롭게 열람하실 수 있습니다.
+            500원 결제 시 24시간 동안 나(화자A)의 축별 심층 해석 및 소통·갈등 관리 전략(MBTI 기반)을 열람하실 수 있습니다. 사주·TCI 융합은 v2 제공 예정이며, 지금 결제 화면은 데모(실제 결제 없음)입니다.
           </p>
           <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 16px;">
             <span id="paywallDemoBadge" class="badge-pill" style="margin: 0; background-color: #DBEAFE; color: #1E40AF; font-size: 0.8rem;">
@@ -708,7 +708,7 @@
           </div>
           <div>
             <button id="btnUnlockPaywall" class="btn-primary" style="font-size: 0.95rem; padding: 12px 24px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
-              🔓 500원 결제하고 종합 결과 보기
+              🔓 데모로 종합 화면 미리보기 — 실제 결제 없음
             </button>
           </div>
           <div style="font-size: 0.75rem; color: #B45309; margin-top: 10px; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.5;">
@@ -740,7 +740,7 @@
               🔮 사주·TCI 융합 v2 종합 결과 연계 안내
             </h4>
             <p style="font-size: 0.85rem; color: #701A75; line-height: 1.6;">
-              본 종합 결과는 차기 v2 만세력(생년월일시 기준 오행 분포 및 십성 명식)과 TCI 심리검사(기질 4차원·성격 3차원) 모듈이 탑재되는 즉시 추가 과금 없이 자동 크로스 융합 분석으로 업그레이드 연동됩니다.
+              사주·TCI 융합은 v2 모듈(만세력 명식 계산·TCI식 미니 자기보도) 제공 시점에 별도 안내됩니다. 현재 v1 유료 상품의 실제 제공물은 MBTI 심층 해석과 소통 전략입니다.
               나(화자A)의 일상 대화 습관이 사주 8자의 잠재 기운과 어떻게 상호작용하는지 입체적으로 규명할 예정입니다.
             </p>
           </div>
@@ -1262,20 +1262,39 @@
         J: [], P: []
       };
 
-      // 문장 분리 후 키워드 탐색
+      // 문장 분리 후 키워드 탐색 (Codex 자문 반영: 반복 문장 누적·부정문 채택·부분문자열 매칭 결함 수정)
+      const NEGATION_RE = /(싫|아니|않|못|말고|그만|취소|거절|반대)/;
+      const scoredSentences = new Set();
       targetMsgs.forEach(m => {
         const sentences = m.maskedContent.split(/(?<=[.?!~])\s+|\n+/);
         sentences.forEach(st => {
           const s = st.trim();
           if (s.length < 2) return;
 
+          // 동일 문장(공백 정규화)이 반복되면 첫 1회만 근거로 채택한다
+          const sentKey = s.replace(/\s+/g, " ");
+          if (scoredSentences.has(sentKey)) return;
+          scoredSentences.add(sentKey);
+
+          // 부정문 가드(문장 단위): 부정 표현이 포함된 문장은 키워드를 근거로 채택하지 않는다.
+          // 부정문을 근거로 채택하는 거짓 양성이 근거 누락보다 나쁘다(Codex 자문 반례: '계획은 싫어').
+          if (NEGATION_RE.test(s)) return;
+
           Object.keys(DICTIONARY).forEach(pole => {
             const keywords = DICTIONARY[pole];
             let hits = [];
             keywords.forEach(kw => {
-              if (s.includes(kw)) {
-                hits.push(kw);
+              let idx = -1;
+              if (kw.length === 1) {
+                // 1자 키워드는 어절 경계에서만 인정한다(예: '편집' 안의 '집' 제외)
+                const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                const mm = new RegExp("(?<![가-힣a-zA-Z0-9])" + esc + "(?![가-힣a-zA-Z0-9])").exec(s);
+                if (mm) idx = mm.index;
+              } else {
+                idx = s.indexOf(kw);
               }
+              if (idx === -1) return;
+              hits.push(kw);
             });
 
             if (hits.length > 0) {
@@ -1476,6 +1495,11 @@
       if (paywallDemoBadge) {
         paywallDemoBadge.style.display = TOSS_PAYMENTS_CLIENT_KEY ? "none" : "inline-block";
       }
+      if (btnUnlockPaywall) {
+        btnUnlockPaywall.textContent = TOSS_PAYMENTS_CLIENT_KEY
+          ? "🔓 500원 결제하고 종합 결과 보기"
+          : "🔓 데모로 종합 화면 미리보기 — 실제 결제 없음";
+      }
 
       if (isUnlocked) {
         paywallLockedView.style.display = "none";
@@ -1496,9 +1520,16 @@
     }
 
     // 심층 MBTI 4축 해석 & 소통 전략 렌더링 (실명 완전 마스킹 유지)
+    // Codex 자문 반영: 근거 부족 축은 방향을 단정하지 않고 '판단 보류'로 표시한다
     function renderDeepMbtiAnalysis(container, mbti) {
       const targetLabel = "나(화자A)";
       const type = mbti.isLack ? "중립/분석보류" : mbti.mbtiType;
+      const axisLine = (axis, label, posText, negText) => {
+        if (axis.isLack) {
+          return `<div><strong>• ${label}:</strong> 판단 보류 — 근거가 부족해 방향을 단정하지 않습니다. 대화를 더 모아주시면 판정할 수 있습니다.</div>`;
+        }
+        return `<div><strong>• ${label} (${axis.dominant} 우세, ${axis.leftRatio}% : ${axis.rightRatio}%):</strong> ${axis.dominant === posText ? negText[0] : negText[1]}</div>`;
+      };
 
       container.innerHTML = `
         <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px;">
@@ -1510,30 +1541,22 @@
             💬 한 줄 요약 — ${PERSONA_ONE_LINER[mbti.rawType]}
           </div>` : ""}
           <div style="font-size: 0.88rem; color: #334155; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
-            <div>
-              <strong>• 에너지 방향 (${mbti.axisEI.dominant} 우세, ${mbti.axisEI.leftRatio}% : ${mbti.axisEI.rightRatio}%):</strong>
-              ${mbti.axisEI.dominant === 'E' 
-                ? `${targetLabel}는 대화 흐름을 주도하며 적극적으로 에너지를 교류할 때 활력을 얻습니다. 타 화자와의 협업 시 아이디어를 말로 풀며 발전시키는 스타일입니다.`
-                : `${targetLabel}는 생각을 깊이 정리한 뒤 신중하게 의견을 표출하는 편입니다. 충분한 숙고 시간과 1:1 대화 환경에서 최상의 역량을 발휘합니다.`}
-            </div>
-            <div>
-              <strong>• 정보 인식 (${mbti.axisSN.dominant} 우세, ${mbti.axisSN.leftRatio}% : ${mbti.axisSN.rightRatio}%):</strong>
-              ${mbti.axisSN.dominant === 'S'
-                ? `실제 사실과 구체적인 수치 데이터, 명확한 현실적 근거를 바탕으로 소통하는 것을 선호합니다. 모호한 추상화보다 실행 가능한 체크리스트에 집중합니다.`
-                : `행간의 의미와 미래의 가능성, 창의적 영감을 중시합니다. 구체적인 세부사항에 앞서 전체적인 비전과 큰 그림을 공유할 때 동기가 극대화됩니다.`}
-            </div>
-            <div>
-              <strong>• 의사 결정 (${mbti.axisTF.dominant} 우세, ${mbti.axisTF.leftRatio}% : ${mbti.axisTF.rightRatio}%):</strong>
-              ${mbti.axisTF.dominant === 'T'
-                ? `합리적 논리와 공정한 원칙, 객관적 인과관계를 최우선으로 판단합니다. 갈등 상황에서는 감정적 위로보다 문제의 본질적 해결책을 찾는 접근을 취합니다.`
-                : `관계의 조화와 상대방의 감정선, 따뜻한 배려를 중시합니다. 피드백을 주고받을 때 상처받지 않도록 쿠션 언어를 적극 활용하는 소통 방식을 지향합니다.`}
-            </div>
-            <div>
-              <strong>• 생활 양식 (${mbti.axisJP.dominant} 우세, ${mbti.axisJP.leftRatio}% : ${mbti.axisJP.rightRatio}%):</strong>
-              ${mbti.axisJP.dominant === 'J'
-                ? `체계적인 시간 계획과 마감 기한 엄수를 통해 심리적 안정감을 얻습니다. 갑작스러운 일정 변경보다는 사전에 합의된 타임라인대로 실행되길 기대합니다.`
-                : `상황 변화에 유연하게 대처하며 즉흥적인 융통성을 발휘합니다. 지나치게 엄격한 규율보다는 자율성과 선택의 여지가 열려 있는 환경을 선호합니다.`}
-            </div>
+            ${axisLine(mbti.axisEI, "에너지 방향", "E", [
+              `${targetLabel}는 대화 흐름을 주도하며 적극적으로 에너지를 교류할 때 활력을 얻습니다. 타 화자와의 협업 시 아이디어를 말로 풀며 발전시키는 스타일입니다.`,
+              `${targetLabel}는 생각을 깊이 정리한 뒤 신중하게 의견을 표출하는 편입니다. 충분한 숙고 시간과 1:1 대화 환경에서 최상의 역량을 발휘합니다.`
+            ])}
+            ${axisLine(mbti.axisSN, "정보 인식", "S", [
+              `실제 사실과 구체적인 수치 데이터, 명확한 현실적 근거를 바탕으로 소통하는 것을 선호합니다. 모호한 추상화보다 실행 가능한 체크리스트에 집중합니다.`,
+              `행간의 의미와 미래의 가능성, 창의적 영감을 중시합니다. 구체적인 세부사항에 앞서 전체적인 비전과 큰 그림을 공유할 때 동기가 극대화됩니다.`
+            ])}
+            ${axisLine(mbti.axisTF, "의사 결정", "T", [
+              `합리적 논리와 공정한 원칙, 객관적 인과관계를 최우선으로 판단합니다. 갈등 상황에서는 감정적 위로보다 문제의 본질적 해결책을 찾는 접근을 취합니다.`,
+              `관계의 조화와 상대방의 감정선, 따뜻한 배려를 중시합니다. 피드백을 주고받을 때 상처받지 않도록 쿠션 언어를 적극 활용하는 소통 방식을 지향합니다.`
+            ])}
+            ${axisLine(mbti.axisJP, "생활 양식", "J", [
+              `체계적인 시간 계획과 마감 기한 엄수를 통해 심리적 안정감을 얻습니다. 갑작스러운 일정 변경보다는 사전에 합의된 타임라인대로 실행되길 기대합니다.`,
+              `상황 변화에 유연하게 대처하며 즉흥적인 융통성을 발휘합니다. 지나치게 엄격한 규율보다는 자율성과 선택의 여지가 열려 있는 환경을 선호합니다.`
+            ])}
             <div style="border-top: 1px dashed #CBD5E1; padding-top: 10px; font-size: 0.82rem; color: #64748B; font-style: italic;">
               🍀 총평: 당신의 카톡은 이미 당신을 꽤 잘 알고 있었습니다. (당신만 몰랐을 뿐)
             </div>
@@ -1774,6 +1797,17 @@
         alert("대화 텍스트를 먼저 입력해주세요.");
         return;
       }
+      // 본인 화자 확인 필수(Codex 자문 반영): 여러 화자가 있는데 본인을 지정하지 않으면
+      // 첫 화자가 자동 선택되어 셀프 분석이 어긋난다 — 분석을 중단하고 선택을 요구한다.
+      if (parsed.speakers.length > 1 && !selectedSpeaker) {
+        alert("분석 대상 화자(본인)를 먼저 선택해주세요.\n셀프 분석은 선택한 본인의 발화만 근거로 삼습니다.");
+        if (speakerSelect) {
+          speakerSelect.focus();
+          speakerSelect.style.outline = "3px solid var(--primary)";
+          setTimeout(() => { if (speakerSelect) speakerSelect.style.outline = ""; }, 2500);
+        }
+        return;
+      }
 
       const targetMsgs = parsed.messages.filter(m => m.isTarget);
       if (targetMsgs.length === 0) {
@@ -1824,7 +1858,7 @@
           document.getElementById(evidenceId).textContent = `${desc} (키워드 매칭 근거 부족)`;
         } else {
           stEl.className = "status-badge status-ok";
-          stEl.textContent = `신뢰도 ${axisData.confidence}%`;
+          stEl.textContent = `근거 충분도 ${axisData.confidence}%`;
           document.getElementById(evidenceId).textContent = `${desc} (${axisData.dominant} 성향 우세)`;
         }
       }
@@ -2002,8 +2036,8 @@
       ctx.font = "15px sans-serif";
       ctx.fillText(`응답 지연: ${metrics.avgLatencyDisplay}  |  웃음(ㅋ/ㅎ): ${metrics.laughDensity}%  |  이모지: ${metrics.emojiDensity}%`, W / 2, 695);
 
-      // 대표 발화 인용문 (첫번째 유효 인용구)
-      let featuredQuote = "“사람들과 따뜻하게 공감하며 즐거운 시너지를 냅니다.”";
+      // 대표 발화 인용문 (유효 인용이 없으면 문장을 만들지 않고 근거 부족을 표시한다 — 가짜 인용 금지)
+      let featuredQuote = null;
       const sampleQuotes = [mbti.axisEI.bestQuote, mbti.axisTF.bestQuote, mbti.axisSN.bestQuote, mbti.axisJP.bestQuote];
       for (const q of sampleQuotes) {
         if (q && q.sentence) {
@@ -2012,12 +2046,18 @@
         }
       }
 
-      ctx.fillStyle = "#334155";
-      ctx.font = "italic 16px sans-serif";
-      if (featuredQuote.length > 45) {
-        featuredQuote = featuredQuote.substring(0, 43) + "…”";
+      if (featuredQuote) {
+        ctx.fillStyle = "#334155";
+        ctx.font = "italic 16px sans-serif";
+        if (featuredQuote.length > 45) {
+          featuredQuote = featuredQuote.substring(0, 43) + "…”";
+        }
+        ctx.fillText(featuredQuote, W / 2, 770);
+      } else {
+        ctx.fillStyle = "#94A3B8";
+        ctx.font = "italic 15px sans-serif";
+        ctx.fillText("인용할 근거가 충분하지 않습니다.", W / 2, 770);
       }
-      ctx.fillText(featuredQuote, W / 2, 770);
 
       // 신박한 태그라인 (형님 확정: 컨텐츠는 신박하고 재미있게)
       ctx.fillStyle = "#4F46E5";

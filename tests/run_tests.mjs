@@ -484,4 +484,43 @@ assert(Number(laughOnly.laughDensity) > 0, 'ㅋㅋ·하하는 웃음으로 세�
 
 console.log('PASS: Claude 최종 검토 반영 (본문 호칭 마스킹·웃음 밀도) 통과');
 
+console.log('--- Test Suite 14: Codex 자문 반영 (반복 문장·부정문·부분문자열·근거 부족 단정 금지) 검증 ---');
+
+const mkMsg = (content, i) => ({
+  maskedContent: content,
+  isTarget: true,
+  date: '2026-11-14',
+  hour: 10,
+  minute: 10 + i
+});
+
+// 14-1. 반복 문장: 같은 문장 3회는 근거 1회분만 누적된다
+const once = scoreMBTI([mkMsg('혼자 조용히 쉬자', 0)], calculateMetrics([mkMsg('혼자 조용히 쉬자', 0)]));
+const thriceMsgs = [mkMsg('혼자 조용히 쉬자', 0), mkMsg('혼자 조용히 쉬자', 1), mkMsg('혼자 조용히 쉬자', 2)];
+const thrice = scoreMBTI(thriceMsgs, calculateMetrics(thriceMsgs));
+assert.strictEqual(thrice.scores.I, once.scores.I, '동일 문장 반복은 I 근거를 증가시키지 않아야 합니다.');
+assert(thrice.scores.I > 0, '정상 문장은 1회 채택되어야 합니다.');
+
+// 14-2. 부정문: '계획은 싫어'류 문장은 J 근거로 채택되지 않는다
+const negMsgs = [mkMsg('계획은 싫어. 미리 정리하는 것도 싫어.', 0), mkMsg('계획은 싫어. 미리 정리하는 것도 싫어.', 1), mkMsg('계획은 싫어. 미리 정리하는 것도 싫어.', 2)];
+const neg = scoreMBTI(negMsgs, calculateMetrics(negMsgs));
+assert.strictEqual(neg.scores.J, 0, '부정문의 계획·정리 키워드가 J 근거로 채택되어서는 안 됩니다.');
+
+// 14-3. 부분문자열: '편집' 안의 '집'은 내향 근거가 아니다
+const editMsgs = [mkMsg('편집 완료', 0), mkMsg('편집 완료', 1), mkMsg('편집 완료', 2)];
+const editScore = scoreMBTI(editMsgs, calculateMetrics(editMsgs));
+assert.strictEqual(editScore.scores.I, 0, "'편집'의 '집'이 내향 근거로 인식되어서는 안 됩니다.");
+
+// 14-4. 근거 부족 시 유료 심층 해석이 방향을 단정하지 않는다
+const tinyMsgs = [mkMsg('ㅋ', 0)];
+const lackMbti = scoreMBTI(tinyMsgs.filter(m => m.isTarget), calculateMetrics(tinyMsgs));
+const deepBox = createMockElement('deepBoxR6');
+renderDeepMbtiAnalysis(deepBox, lackMbti);
+if (lackMbti.isLack) {
+  assert(deepBox.innerHTML.includes('판단 보류'), '근거 부족 축은 판단 보류로 표시되어야 합니다.');
+  assert(!deepBox.innerHTML.includes('우세,'), '근거 부족 축에 우세 방향을 단정하지 않아야 합니다.');
+}
+
+console.log('PASS: Codex 자문 반영 (반복 문장·부정문·부분문자열·근거 부족 단정 금지) 통과');
+
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
