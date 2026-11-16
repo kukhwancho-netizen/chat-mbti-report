@@ -698,7 +698,7 @@
         </div>
         <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 14px;">
           <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
-            아래 "사주 · TCI 3소스 종합" 카드에서 명식 계산과 미니 자기보고를 바로 진행할 수 있습니다.
+            아래 "사주 · TCI 3소스 종합" 카드에서 명식 계산(사주 8자·오행·십성)과 TCI 착안 6영역 미니 자기보고를 바로 진행할 수 있습니다.
           </p>
         </div>
       </section>
@@ -708,7 +708,7 @@
         <div class="card-title">
           <span>사주 · TCI 3소스 종합 (v2)</span>
         </div>
-        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다.</p>
+        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기 근사(경계일 ±1일 가능)·시간대 UTC+9 고정·민간시 기준(진태양시 미적용).</p>
         <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; margin-bottom: 8px;">
           <input type="date" id="v2BirthDate" aria-label="생년월일">
           <input type="time" id="v2BirthTime" aria-label="출생 시간">
@@ -1439,6 +1439,11 @@
       if (deepFree) deepFree.innerHTML = "";
       const deepSection = document.getElementById("deepAnalysisSection");
       if (deepSection) deepSection.style.display = "none";
+      // v2 상태: 대화 파생 결과(mbti)만 초기화 — 사주·TCI는 사용자 입력 특성이라 유지
+      if (typeof v2State !== "undefined") {
+        v2State.mbti = null;
+        renderFusionIfReady();
+      }
     }
 
     // ===================== v2: 사주 · TCI 3소스 종합 =====================
@@ -1601,20 +1606,25 @@
     ];
 
     function fusionRow(theme, mbti, tci, saju) {
-      const axis = mbti["axis" + theme.axis];
-      const chatLine = axis.isLack
-        ? "판단 보류 — 근거 문장이 부족해요"
-        : `${axis.dominant} 쪽 관찰됨 (근거 문장 ${axis.validQuotes}개)`;
-      const tciLine = theme.tciAreas.map(a => tci[a] ? `${a}: ${tci[a].label} (${tci[a].score})` : `${a}: 미응답`).join(" · ");
-      const sajuLine = theme.sajuGroups.map(g => saju.groupCount[g] ? `${g} ${saju.groupCount[g]}개 — ${SIPSONG_NOTE[g].split(" — ")[1]}` : `${g} 없음 — ${SIPSONG_NOTE[g].split(" — ")[1]}이 약한 구조`).join(" · ");
-      const positions = [axis.dominant === theme.high ? "방향 일치" : (axis.isLack ? "보류" : "다른 관점")];
-      return {
-        label: theme.label,
-        chat: chatLine,
-        tci: tciLine,
-        saju: sajuLine,
-        agree: positions[0]
-      };
+      // null-safe: 어느 소스가 비어 있어도 예외 없이 대기 문구를 돌려준다
+      let chatLine = "대화 분석 전 — 리포트를 먼저 만들어 주세요";
+      let agree = "대기";
+      if (mbti && mbti["axis" + theme.axis]) {
+        const axis = mbti["axis" + theme.axis];
+        chatLine = axis.isLack
+          ? "판단 보류 — 근거 문장이 부족해요"
+          : `${axis.dominant} 쪽 관찰됨 (근거 문장 ${axis.validQuotes}개)`;
+        agree = axis.isLack ? "보류" : (axis.dominant === theme.high ? "방향 일치" : "다른 관점");
+      }
+      let tciLine = "TCI 응답 대기 중";
+      if (tci) {
+        tciLine = theme.tciAreas.map(a => tci[a] ? `${a}: ${tci[a].label} (${tci[a].score})` : `${a}: 미응답`).join(" · ");
+      }
+      let sajuLine = "명식 계산 대기 중";
+      if (saju && saju.groupCount) {
+        sajuLine = theme.sajuGroups.map(g => saju.groupCount[g] ? `${g} ${saju.groupCount[g]}개 — ${SIPSONG_NOTE[g].split(" — ")[1]}` : `${g} 없음 — ${SIPSONG_NOTE[g].split(" — ")[1]}이 약한 구조`).join(" · ");
+      }
+      return { label: theme.label, chat: chatLine, tci: tciLine, saju: sajuLine, agree };
     }
 
     function renderFusionIfReady() {
@@ -1629,19 +1639,17 @@
       }
       let html = "<h4 style=\"font-size: 0.95rem; font-weight: 700; margin-bottom: 10px;\">3소스 비교 — 같은 주제를 세 관점에서</h4>";
       FUSION_THEMES.forEach(theme => {
-        const chatLine = hasMbti ? fusionRow(theme, v2State.mbti, v2State.tci, v2State.saju).chat : "대화 분석 전 — 리포트를 먼저 만들어 주세요";
-        const tciLine = hasTci ? (function () {
-          const row = fusionRow(theme, v2State.mbti || null, v2State.tci, v2State.saju);
-          return row.tci;
-        })() : "TCI 응답 대기 중";
-        const sajuLine = hasSaju && v2State.saju ? fusionRow(theme, v2State.mbti, v2State.tci, v2State.saju).saju : "명식 계산 대기 중";
+        const row = fusionRow(theme, hasMbti ? v2State.mbti : null, hasTci ? v2State.tci : null, hasSaju && v2State.saju ? v2State.saju : null);
         html += `
         <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-bottom: 12px;">
-          <div style="font-weight: 700; margin-bottom: 6px;">${theme.label}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="font-weight: 700;">${theme.label}</div>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">대화 vs 자기보고: ${row.agree}</span>
+          </div>
           <div style="font-size: 0.88rem; line-height: 1.7;">
-            <div>1소스 · 대화 관찰: ${chatLine}</div>
-            <div>2소스 · 전통 해석: ${sajuLine}</div>
-            <div>3소스 · 자기보고: ${tciLine}</div>
+            <div>1소스 · 대화 관찰: ${row.chat}</div>
+            <div>2소스 · 전통 해석: ${row.saju}</div>
+            <div>3소스 · 자기보고: ${row.tci}</div>
           </div>
         </div>`;
       });
