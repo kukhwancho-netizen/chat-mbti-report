@@ -396,4 +396,41 @@ assert.strictEqual(prevBarF.style.width, '', '축 바(barF) width가 초기화�
 assert(clearedRect && clearedRect.w === 800 && clearedRect.h === 960, 'canvas 픽셀이 클리어되어야 합니다.');
 console.log('PASS: Luna R3 findings 회귀 (콜론 폴백·파일 검증·토큰 위조·리셋 잔류) 통과');
 
+console.log('--- Test Suite 11: 입력 소스 일반화 (지피티 등 일반 대화 텍스트) 검증 ---');
+
+// 11-1. 일반 대화 형식(화자: 내용, 타임스탬프 없음) 파싱
+const genericChat = [
+  '사용자: 요즘 내 대화 스타일 어때 보이면 말해줘 ㅋㅋ',
+  'ChatGPT: 메시지가 짧고 템포가 빠른 편이네요!',
+  '사용자: 그냥 갈겨쓰는 편이라 그래',
+  'ChatGPT: 결정을 빨리 내리는 스타일로 보입니다.'
+].join('\n');
+const genericParsed = parseChatText(genericChat, '사용자');
+assert(genericParsed && genericParsed.messages.length === 4, '일반 대화 4줄이 4개 메시지로 파싱되어야 합니다.');
+assert.strictEqual(genericParsed.messages[0].rawSpeakerMasked || genericParsed.messages[0].maskedSpeaker, '나(화자A)', '지정 화자는 나(화자A)로 마스킹되어야 합니다.');
+assert.strictEqual(genericParsed.messages[1].maskedSpeaker, '화자B', '나머지 화자는 화자B로 치환되어야 합니다.');
+assert(genericParsed.messages[0].maskedContent.includes('ㅋㅋ'), '본문은 보존되어야 합니다.');
+assert.strictEqual(genericParsed.messages.every(m => m.hour === null), true, '타임스탬프가 없는 메시지는 hour가 null이어야 합니다.');
+
+// 11-2. 타임스탬프 부재 시 시간 기반 지표는 근거 부족 처리
+const genericMessages = genericParsed.messages;
+const genericMetrics = calculateMetrics(genericMessages);
+assert.strictEqual(genericMetrics.hasInitiateRate, false, '타임스탬프가 없으면 개시율은 근거 부족이어야 합니다.');
+assert.strictEqual(genericMetrics.initiateRateDisplay, '근거 부족', '개시율 표기는 근거 부족이어야 합니다.');
+assert.strictEqual(genericMetrics.hasAvgLatency, false, '타임스탬프가 없으면 응답 지연은 근거 부족이어야 합니다.');
+assert(genericMetrics.laughDensity !== undefined, '웃음 밀도 등 텍스트 기반 지표는 여전히 계산되어야 합니다.');
+
+// 11-3. 라인 시작 레이블만 화자로 인정 — 본문 중간 콜론 문장은 흡수되고, 한 번만 등장한 화자도 누락되지 않는다
+const colonHeavyChat = [
+  '사용자: 자기소개 부탁해',
+  'ChatGPT: 좋아요. 참고 사항: 저는 대화 패턴만 봅니다.',
+  '사용자: 오케이 그럼 시작해줘: 첫 번째 질문'
+].join('\n');
+const colonParsed = parseChatText(colonHeavyChat, '사용자');
+assert(colonParsed && colonParsed.messages.length === 3, '라인 시작 레이블 3개가 3개 메시지가 되어야 합니다.');
+assert(colonParsed.messages[1].maskedSpeaker === '화자B', '한 번만 등장한 화자도 누락 없이 마스킹 매핑되어야 합니다.');
+assert(colonParsed.messages[1].maskedContent.includes('참고 사항'), '본문 중간 콜론 문장은 화자 분리되지 않고 본문에 남아야 합니다.');
+
+console.log('PASS: 입력 소스 일반화 (지피티 등 일반 대화 텍스트) 통과');
+
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');

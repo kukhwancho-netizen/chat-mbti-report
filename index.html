@@ -486,7 +486,7 @@
     <section class="notice-card">
       <div class="notice-item">
         <strong>🔒 브라우저 메모리 격리 (비전송 원칙)</strong>
-        <span>입력하신 카카오톡 대화 내용은 외부 서버로 <strong>비전송</strong>되며, 오직 현재 브라우저 탭 내에서만 파싱 및 마스킹 처리된 후 즉시 소멸합니다.</span>
+        <span>입력하신 대화 텍스트(카톡·지피티 등)는 외부 서버로 <strong>비전송</strong>되며, 오직 현재 브라우저 탭 내에서만 파싱 및 마스킹 처리된 후 즉시 소멸합니다. 이 서비스는 <strong>별도 개인정보를 수집하지 않습니다</strong> — v2 사주 기능에서는 생년월일시만 입력받습니다(최소 수집 원칙).</span>
       </div>
       <div class="notice-item">
         <strong>💡 자기이해 목적 고지</strong>
@@ -508,7 +508,7 @@
           </button>
         </div>
       </div>
-      <textarea id="rawChatInput" placeholder="카카오톡 PC 내보내기 텍스트를 이곳에 붙여넣으세요...&#10;형식 예시:&#10;--------------- 2026년 11월 14일 토요일 ---------------&#10;[오전 10:15] 화자A : 안녕하세요! 이번 주말 일정 체크해봐요."></textarea>
+      <textarea id="rawChatInput" placeholder="카톡 내보내기 텍스트 또는 지피티(ChatGPT) 등 대화 텍스트를 붙여넣으세요...&#10;카톡 형식 예시:&#10;--------------- 2026년 11월 14일 토요일 ---------------&#10;[오전 10:15] 화자A : 안녕하세요! 이번 주말 일정 체크해봐요.&#10;일반 대화 형식(지피티 대화 복사 등) 예시:&#10;사용자: 요즘 내 대화 스타일 어때 보이면 말해줘&#10;ChatGPT: 메시지가 짧고 템포가 빠른 편이네요!"></textarea>
       
       <div class="settings-row">
         <div class="form-group">
@@ -1023,6 +1023,12 @@
 
       let lastMsg = null;
 
+      // 입력 소스 일반화: 카톡 시간 헤더가 없으면 '화자: 내용' 일반 대화(지피티 등)도 받는다.
+      // 거짓 흡수(실제 화자가 본문에 남는 프라이버시 결함)가 거짓 분할보다 나쁘므로,
+      // 라인 시작 레이블은 1회 등장도 화자로 인정하고 본문 중간 콜론은 흡수한다.
+      const isKakaoFormat = lines.some(l => /^\[(오전|오후)\s*\d{1,2}:\d{2}\]/.test(l.trim()));
+      const genericHeaderRegex = /^(.{1,30}?):\s*(.+)$/;
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
@@ -1056,8 +1062,29 @@
             rawContent: msgHeader.content
           };
           messages.push(lastMsg);
-        } else if (lastMsg) {
-          lastMsg.rawContent += "\n" + line;
+        } else {
+          // 일반 대화 모드(지피티 등): 라인 시작 '레이블:'로 새 메시지를 시작한다
+          if (!isKakaoFormat) {
+            const genericMatch = line.match(genericHeaderRegex);
+            if (genericMatch) {
+              const candidate = genericMatch[1].trim();
+              if (candidate && !candidate.includes("://")) {
+                speakerSet.add(candidate);
+                lastMsg = {
+                  date: currentDate,
+                  hour: null,
+                  minute: null,
+                  timeString: "시간 미지정",
+                  rawSpeaker: candidate,
+                  rawContent: genericMatch[2]
+                };
+                messages.push(lastMsg);
+                continue;
+              }
+            }
+          }
+          // 그 외 줄은 직전 메시지에 붙는 여러 줄 본문이다
+          if (lastMsg) lastMsg.rawContent += "\n" + line;
         }
       }
 
@@ -1140,6 +1167,9 @@
       // 대화 상대 존재 여부 판정
       const hasPartner = messages.some(m => !m.isTarget);
 
+      // 입력 소스 일반화: 타임스탬프가 없는 텍스트(지피티 등)는 시간 기반 지표를 계산하지 않는다
+      const hasTiming = messages.every(m => typeof m.hour === "number" && typeof m.minute === "number");
+
       // 대화 개시율 계산
       let sessionStarts = 0;
       let targetInitiations = 0;
@@ -1149,7 +1179,7 @@
         let isNewSession = false;
         if (!prevMsg || prevMsg.date !== m.date) {
           isNewSession = true;
-        } else {
+        } else if (hasTiming) {
           const diffMinutes = (m.hour * 60 + m.minute) - (prevMsg.hour * 60 + prevMsg.minute);
           if (diffMinutes < 0 || diffMinutes >= 60) isNewSession = true;
         }
@@ -1171,7 +1201,7 @@
       for (let i = 1; i < messages.length; i++) {
         const curr = messages[i];
         const prev = messages[i - 1];
-        if (curr.date === prev.date) {
+        if (hasTiming && curr.date === prev.date) {
           const delay = (curr.hour * 60 + curr.minute) - (prev.hour * 60 + prev.minute);
           if (delay >= 0 && delay < 120) {
             if (curr.isTarget && !prev.isTarget) {
@@ -1577,6 +1607,20 @@
         if (parsed && parsed.rawSpeaker) {
           speakers.add(parsed.rawSpeaker);
         }
+      }
+
+      // 입력 소스 일반화: 카톡 형식이 아니면 '레이블: 내용' 일반 대화(지피티 등)의 화자도 감지
+      const isKakaoInput = /^\[(오전|오후)\s*\d{1,2}:\d{2}\]/m.test(text);
+      if (!isKakaoInput) {
+        lines.forEach(l => {
+          const t = l.trim();
+          if (!t) return;
+          const gm = t.match(/^(.{1,30}?):\s*(.+)$/);
+          if (gm) {
+            const c = gm[1].trim();
+            if (c && !c.includes("://")) speakers.add(c);
+          }
+        });
       }
 
       speakerSelect.innerHTML = "";
