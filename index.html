@@ -89,6 +89,16 @@
       margin-bottom: 24px;
     }
 
+    .jegal-gloss {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      border-top: 1px dashed var(--border);
+      padding-top: 6px;
+      margin-top: 6px;
+    }
+
     .notice-card {
       background-color: var(--surface-muted);
       border: none;
@@ -725,6 +735,14 @@
           <div id="tciResult"></div>
         </div>
         <div id="fusionBox"></div>
+        <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px;">
+          <div class="card-title" style="padding: 0; margin-bottom: 10px;">
+            <span>멘탈제갈량 리포트 — 전략가의 관찰</span>
+          </div>
+          <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 12px;">명리 용어는 전부 "쉽게 말해서" 풀이하고, 단계를 하나씩 열어 보는 구성이다. 운세 확정 표현 없이 관찰과 조언만 담는다.</p>
+          <button id="btnJegalReport" class="btn-primary">멘탈제갈량 리포트 열기</button>
+          <div id="jegalReportBox"></div>
+        </div>
       </section>
     </div>
 
@@ -1667,7 +1685,187 @@
       box.innerHTML = html;
     }
 
-    const v2State = { saju: null, tci: null };
+    // ===================== 멘탈제갈량 리포트 (13단계 구조를 관찰형 7단계로 재구성) =====================
+    // 페르소나: 전략가 조언 톤 — 운세 확정 표현 금지, 모든 용어에 '쉽게 말해서' 해설 부착
+    const JEGAL_GLOSSARY = {
+      "사주팔자": "태어난 순간의 연·월·일·시 자리에 놓인 여덟 글자. 쉽게 말해서 태어난 순간의 '출발 지형도'란다.",
+      "일간": "일주 자리의 천간, 곧 나를 상징하는 글자. 쉽게 말해서 내 본체의 기질 이름이란다.",
+      "오행": "목·화·토·금·수 다섯 기운. 쉽게 말해서 성격의 다섯 지형(숲·불·벌·칼·강)이란다.",
+      "상생": "기운이 서로 돕는 관계. 쉽게 말해서 물이 나무를 키우듯 이어지는 순환이란다.",
+      "십성": "일간을 기준으로 다른 글자들과의 관계를 열 이름으로 나눈 것. 쉽게 말해서 내 안의 직책 분포란다.",
+      "비겁": "비견과 겁재. 쉽게 말해서 내 편이자 경쟁자인 친구들이다.",
+      "식상": "식신과 상관. 쉽게 말해서 말과 아이디어가 흘러나오는 배관이다.",
+      "재성": "편재와 정재. 쉽게 말해서 눈에 보이는 결과와 자원을 좇는 손이다.",
+      "관성": "편관과 정관. 쉽게 말해서 규칙과 체계를 세우는 뼈대다.",
+      "인성": "편인과 정인. 쉽게 말해서 배우고 준비하며 등 떠받쳐 주는 책상이다."
+    };
+
+    function gloss(term) {
+      const note = JEGAL_GLOSSARY[term];
+      return note ? `<span class="jegal-gloss">${term}: ${note}</span>` : term;
+    }
+
+    function jegalBar(el, count, total) {
+      const w = total > 0 ? Math.round((count / total) * 100) : 0;
+      return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+        <span style="width: 28px; font-weight: 700;">${el}</span>
+        <div style="flex: 1; height: 10px; background: var(--surface-muted); border-radius: 5px; overflow: hidden;"><div style="width: ${w}%; height: 100%; background: var(--primary);"></div></div>
+        <span style="width: 30px; text-align: right; font-variant-numeric: tabular-nums;">${count}개</span>
+      </div>`;
+    }
+
+    // 상황별 관찰 문구 — 확정 표현 금지, 근거(십성·오행 개수)를 함께 표기
+    function jegalDomainLines(saju) {
+      const g = saju.groupCount;
+      const lines = [];
+      const gN = g["관성"] || 0, iN = g["인성"] || 0, sN = g["식상"] || 0, bN = g["비겁"] || 0, jN = g["재성"] || 0;
+      lines.push({
+        title: "일과 커리어",
+        body: gN + iN >= 3
+          ? "체계와 준비의 직책이 많은 구조다. 정해진 틀 안에서 완성도를 높이는 방식이 잘 맞는 편이다. (근거: 관성 " + gN + "·인성 " + iN + ")"
+          : sN >= 2
+            ? "표현의 배관이 발달한 구조다. 정해진 틀보다 만들어 내고 보여주는 방식에서 힘이 나는 편이다. (근거: 식상 " + sN + ")"
+            : "직책 분포가 고르다. 상황에 따라 체계와 표현을 오가는 편이다. (근거: 관성 " + gN + "·인성 " + iN + "·식상 " + sN + ")"
+      });
+      lines.push({
+        title: "관계",
+        body: bN >= 2
+          ? "경쟁자이자 편의 자리가 많은 구조다. 나서는 힘이 강한 만큼, 배째지 않고 역할을 나누는 약속이 관계를 편하게 만든다. (근거: 비겁 " + bN + ")"
+          : "혼자 정하고 혼자 끝내는 비중이 상대적으로 큰 구조다. 의견을 미리 말해 두면 오해가 줄어든다. (근거: 비겁 " + bN + ")"
+      });
+      lines.push({
+        title: "재물",
+        body: jN >= 2
+          ? "결과를 좇는 손이 발달한 구조다. 목표를 숫자로 쪼개 확인하는 방식이 잘 맞는 편이다. (근거: 재성 " + jN + ")"
+          : "자원의 손이 적은 구조다. 관리 규칙을 미리 정해 두는 쪽이 편하다. (근거: 재성 " + jN + ")"
+      });
+      lines.push({
+        title: "몸 관리",
+        body: "전통 관행에서는 오행의 치우침이 쓰이는 방향에 영향을 준다고 본다. " +
+          (Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] === "木" ? "목 기운이 강한 지형이니 규칙적 움직임으로 풀어 쓰는 것이 권해진다."
+            : Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] === "火" ? "화 기운이 강한 지형이니 쉬는 리듬을 미리 잡아 두는 것이 권해진다."
+            : Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] === "土" ? "토 기운이 강한 지형이니 무리한 쌓기 전에 휴식을 명문화하는 것이 권해진다."
+            : Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] === "金" ? "금 기운이 강한 지형이니 끝내기 전에 이완 절차를 두는 것이 권해진다."
+            : "수 기운이 강한 지형이니 생각이 많아질 때 몸을 먼저 움직이는 것이 권해진다.") +
+          " (근거: 최다 오행 " + Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] + " " + Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][1] + "개)"
+      });
+      return lines;
+    }
+
+    function buildJegalReport(saju, mbti, tci) {
+      const dayStem = saju.pillars.day.gz % 10;
+      const p = saju.pillars;
+      const pillarsRow = [p.year, p.month, p.day, p.hour].map(x => x ? `${x.gan}${x.ji}` : "—").join(" ");
+      const totalEl = Object.values(saju.elCount).reduce((a, b) => a + b, 0);
+      const sections = [];
+
+      sections.push({
+        title: "1. 명식 개관 — 출발 지형도",
+        html: `
+          <div style="font-weight: 700; margin-bottom: 6px;">${pillarsRow} <span style="font-size: 0.8rem; color: var(--text-muted);">(${p.ruleVersion})</span></div>
+          <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">兵法에 이르기를 "나를 알고 적을 알면 백 번 싸워 위태롭지 않다" 하였다. 대화 기록은 知己(지기, 나를 앎)의 첫걸음이고, 이 여덟 글자는 또 하나의 지도다.</p>
+          <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">일간 ${p.day.gan} — ${ILGAN_NOTE[dayStem]}.</p>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">${gloss("사주팔자")} · ${gloss("일간")}</p>`
+      });
+
+      sections.push({
+        title: "2. 오행 조성 — 성격의 다섯 지형",
+        html: `
+          <div style="margin-bottom: 10px;">${Object.keys(ELEMENT_NOTE).map(el => jegalBar(el, saju.elCount[el] || 0, totalEl)).join("")}</div>
+          <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">가장 발달한 기운은 ${Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0]} — ${ELEMENT_NOTE[Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0]]}이다. 강한 지형은 무기요, 약한 지형은 보완할 곳이란다.</p>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">${gloss("오행")} · ${gloss("상생")}</p>`
+      });
+
+      sections.push({
+        title: "3. 십성 구조 — 내 안의 직책 분포",
+        html: `
+          <div style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">
+            ${Object.keys(SIPSONG_NOTE).map(k => saju.groupCount[k] ? `<div><strong>${k} ${saju.groupCount[k]}</strong> — ${SIPSONG_NOTE[k]}</div>` : `<div style="color: var(--text-muted);">${k} 0 — ${SIPSONG_NOTE[k].split(" — ")[1]}이 상대적으로 적은 구조</div>`).join("")}
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">${gloss("십성")} · ${gloss("비겁")} · ${gloss("식상")} · ${gloss("재성")} · ${gloss("관성")} · ${gloss("인성")}</p>`
+      });
+
+      if (mbti) {
+        const axes = [mbti.axisEI, mbti.axisSN, mbti.axisTF, mbti.axisJP];
+        const names = ["에너지 방향(E/I)", "정보 인식(S/N)", "판단 방식(T/F)", "생활 양식(J/P)"];
+        const axisLines = axes.map((ax, i) => ax.isLack
+          ? `<div>${names[i]} — 판단 보류 (근거 문장 부족)</div>`
+          : `<div>${names[i]} — ${ax.dominant} 쪽 관찰됨 (근거 문장 ${ax.validQuotes}개)</div>`).join("");
+        sections.push({
+          title: "4. 대화 관찰과의 대조 — 지도 두 장 겹쳐 보기",
+          html: `
+            <div style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">${axisLines}</div>
+            <p style="font-size: 0.9rem; line-height: 1.7;">여덟 글자의 지형과 실제 발화의 관찰이 같은 방향이면 신뢰의 근거가 늘고, 갈리면 그 주제가 성찰 포인트란다. 어느 쪽이 옳다 단정할 근거는 없다.</p>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">두 지도는 서로 다른 방식의 관찰이며, 하나로 합쳐 점수 매기지 않는다.</p>`
+        });
+      }
+
+      sections.push({
+        title: mbti ? "5. 생활 영역 관찰 — 경향과 조언" : "4. 생활 영역 관찰 — 경향과 조언",
+        html: `<div style="font-size: 0.9rem; line-height: 1.8;">${jegalDomainLines(saju).map(l => `<div style="margin-bottom: 8px;"><strong>${l.title}</strong><br>${l.body}</div>`).join("")}</div>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">위 문장은 십성·오행 개수에 대한 관행적 해석 프레임이며 확률·운명의 진술이 아니다.</p>`
+      });
+
+      const insightCount = (mbti ? 1 : 0) + (tci ? 1 : 0);
+      sections.push({
+        title: mbti ? `6. 성찰 질문 — 스스로에게 물을 세 가지` : `5. 성찰 질문 — 스스로에게 물을 세 가지`,
+        html: `<ol style="font-size: 0.9rem; line-height: 1.9; padding-left: 18px;">
+            <li>최근 한 달, 나는 어떤 순간에서 가장 편했는가? 그 순간이 위 지형 중 어디에 해당하는가?</li>
+            <li>관찰된 경향과 내가 아는 나 사이에 갈리는 곳은 어디인가? (갈림은 오류가 아니라 물음이다)</li>
+            <li>이번 주에 바꿔 볼 작은 규칙 하나는 무엇인가?</li>
+          </ol>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">완성된 답을 찾는 절차가 아니라 스스로 점검하는 질문이다${tci ? " — TCI식 응답과 겹쳐 보면 더 구체적이다" : ""}.</p>`
+      });
+
+      sections.push({
+        title: mbti ? `7. 인생상담 — 전략가의 조언` : `6. 인생상담 — 전략가의 조언`,
+        html: `
+          <p style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">전략의 첫걸음은 억지로 고치는 것이 아니라 지형을 아는 것이다. 강한 기운은 무기로, 약한 기운은 약속으로 쓰란다 — 강한 쪽은 의도적으로 쓰고, 약한 쪽은 규칙으로 보완하라는 뜻이다.</p>
+          <p style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">대화 기록을 한 달에 한 번 다시 불러와 비교하라. 지형은 바뀌지 않아도 표현은 변한다. 변화가 데이터로 남는 것, 그것이 이 도구의 진짜 용도다.</p>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">한계 고지: 본 리포트는 전통 명리 관행과 규칙 기반 관찰을 조합한 자기이해 콘텐츠다. 공식 심리검사·의학적 진단·운세 확정이 아니며, 정밀 역법(대운·연운)이 필요한 부분은 본 버전에서 의도적으로 제외했다${insightCount < 2 ? " — 대화 분석 또는 TCI 응답을 더하면 대조 절이 추가된다" : ""}.</p>`
+      });
+
+      return sections;
+    }
+
+    const jegalState = { sections: null, shown: 0 };
+
+    function renderJegalStep() {
+      const box = document.getElementById("jegalReportBox");
+      if (!box || !jegalState.sections) return;
+      let html = "";
+      jegalState.sections.slice(0, jegalState.shown).forEach(sec => {
+        html += `<div style="border-top: 1px solid var(--border); padding: 14px 0;">
+          <h4 style="font-size: 0.98rem; font-weight: 700; margin-bottom: 8px;">${sec.title}</h4>
+          ${sec.html}
+        </div>`;
+      });
+      if (jegalState.shown < jegalState.sections.length) {
+        html += `<button id="btnJegalNext" class="btn-primary">다음 단계 보기 (${jegalState.shown + 1}/${jegalState.sections.length})</button>`;
+      } else {
+        html += `<p style="font-size: 0.82rem; color: var(--text-muted);">— 멘탈제갈량 리포트 끝 —</p>`;
+      }
+      box.innerHTML = html;
+      const next = document.getElementById("btnJegalNext");
+      if (next) {
+        next.addEventListener("click", () => {
+          jegalState.shown += 1;
+          renderJegalStep();
+        });
+      }
+    }
+
+    const btnJegal = document.getElementById("btnJegalReport");
+    if (btnJegal) {
+      btnJegal.addEventListener("click", () => {
+        if (!v2State.saju) { alert("명식 계산을 먼저 진행해주세요."); return; }
+        jegalState.sections = buildJegalReport(v2State.saju, v2State.mbti, v2State.tci);
+        jegalState.shown = 1;
+        renderJegalStep();
+      });
+    }
+
+    const v2State = { saju: null, tci: null, mbti: null };
 
     function renderSaju(pillars) {
       const box = document.getElementById("sajuResult");
@@ -2417,6 +2615,8 @@
       globalThis.tenGod = tenGod;
       globalThis.TCI_QUESTIONS = TCI_QUESTIONS;
       globalThis.tciScore = tciScore;
+      globalThis.buildJegalReport = buildJegalReport;
+      globalThis.JEGAL_GLOSSARY = JEGAL_GLOSSARY;
       globalThis.maskSpeakerNamesInText = maskSpeakerNamesInText;
       globalThis.isDatePattern = isDatePattern;
       globalThis.splitHeaderAndContent = splitHeaderAndContent;
@@ -2451,6 +2651,8 @@
         tenGod,
         TCI_QUESTIONS,
         tciScore,
+        buildJegalReport,
+        JEGAL_GLOSSARY,
         maskSpeakerNamesInText,
         isDatePattern,
         splitHeaderAndContent,

@@ -565,3 +565,35 @@ assert.strictEqual(TCI_QUESTIONS.length, 12, 'TCI 문항은 12개여야 합니�
 console.log('PASS: v2 명식 계산·TCI·3소스 융합 (KASI 검증) 통과');
 
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
+
+console.log('--- Test Suite 16: 멘탈제갈량 리포트 (페르소나·용어 해설·단계 구성) 검증 ---');
+
+const { buildJegalReport, JEGAL_GLOSSARY } = sandbox;
+assert(typeof buildJegalReport === 'function', 'buildJegalReport가 로드되지 않았습니다.');
+
+const pSaju = sandbox.calcPillars(1990, 5, 15, 14, false);
+const summary = { pillars: pSaju, elCount: { "木": 2, "火": 1, "土": 2, "金": 1, "水": 2 }, tenGods: ["비견", "편관", "편인", "편재"], groupCount: { "비겁": 1, "관성": 1, "인성": 1, "재성": 1 } };
+const sections = buildJegalReport(summary, null, null);
+assert(sections.length >= 6, `제갈량 리포트는 6단계 이상이어야 합니다(현재 ${sections.length}).`);
+
+// 용어 해설: '쉽게 말해서' 문구가 리포트 전체에 1회 이상 존재
+const allHtml = sections.map(x => x.html).join("");
+assert(allHtml.includes("쉽게 말해서"), "명리 용어에 '쉽게 말해서' 해설이 포함되어야 합니다.");
+assert(Object.keys(JEGAL_GLOSSARY).length >= 8, "용어 해설 사전이 8개 이상이어야 합니다.");
+
+// 한계 고지: 운세 확정·진단 아님 고지 포함
+assert(allHtml.includes("한계 고지"), "한계 고지가 포함되어야 합니다.");
+assert(allHtml.includes("운세 확정이 아니며") || allHtml.includes("운세 확정이 아니"), "운세 확정 부정 고지가 있어야 합니다.");
+
+// 슬롯 방지: 확정형 금지어('반드시 ~한다' 운명 단정) 미사용
+assert(!/운명이 정해져/.test(allHtml), "운명 단정 표현을 쓰지 않아야 합니다.");
+
+// 대화 분석 포함 시 4단계 대조절 추가
+const withMbti = buildJegalReport(summary, { axisEI: { isLack: false, dominant: "E", validQuotes: 3 }, axisSN: { isLack: false, dominant: "S", validQuotes: 2 }, axisTF: { isLack: false, dominant: "T", validQuotes: 4 }, axisJP: { isLack: false, dominant: "J", validQuotes: 2 } }, null);
+const hasContrast = withMbti.some(x => x.title.includes("대조"));
+assert(hasContrast, "대화 분석이 있으면 대조 절이 추가되어야 합니다.");
+assert(withMbti.length === sections.length + 1, "대조 절 추가로 단계 수가 늘어나야 합니다.");
+
+console.log('PASS: 멘탈제갈량 리포트 (페르소나·용어 해설·단계 구성) 통과');
+
+console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
