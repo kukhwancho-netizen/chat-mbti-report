@@ -707,6 +707,15 @@ assert.strictEqual(dwF.list[0].gan + dwF.list[0].ji, '庚辰', '월주 辛巳 �
 // 19-3. 성별 미입력 → null (대운 미계산 안내)
 assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, ""), null, '성별 미입력 시 대운은 null이어야 합니다.');
 
+// 19-4. 음년(辛未 1991) 남성 = 역행: 월주 癸巳 → 첫 대운 壬辰
+const dwYin = calcDaewun(calcPillars(1991, 5, 15, 14, false), 1991, 5, 15, "M");
+assert(dwYin.forward === false, '음년 남성은 역행이어야 합니다.');
+assert.strictEqual(dwYin.list[0].gan + dwYin.list[0].ji, '壬辰', '월주 癸巳 역행 첫 대운은 壬辰이어야 합니다.');
+
+// 19-5. 성별 방어: M/F 외 값은 null
+assert.strictEqual(calcDaewun(calcPillars(1990, 5, 15, 14, false), 1990, 5, 15, undefined), null, 'undefined 성별은 null이어야 합니다.');
+
+// (한계) Suite 18의 querySelector mock은 라디오 DOM·위임 이벤트의 실제 경로를 대체하지 못함 — 체인 연결 확인용 스모크로 한정
 console.log('PASS: 대운·연운 계산 (간지 시퀀스·방향·경계) 통과');
 
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');

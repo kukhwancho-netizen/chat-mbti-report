@@ -1960,7 +1960,7 @@
       box.innerHTML = TCI_QUESTIONS.map((q, i) => `
         <div style="border-bottom: 1px solid var(--border); padding: 10px 0;">
           <div style="font-size: 0.9rem; margin-bottom: 6px;">${i + 1}. ${q.text}</div>
-          <div style="display: flex; gap: 10px; font-size: 13px; color: var(--text-muted);">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px 10px; font-size: 13px; color: var(--text-muted); align-items: center;">
             ${[1, 2, 3, 4, 5].map(v => `<label style="display: inline-flex; align-items: center; gap: 4px;"><input type="radio" name="tciq${i}" value="${v}">${v}</label>`).join("")}
             <span style="margin-left: 4px;">(1 전혀 아니다 — 5 매우 그렇다)</span>
           </div>
@@ -1987,10 +1987,21 @@
     function calcDaewun(pillars, birthY, birthM, birthD, gender) {
       const yearGan = pillars.year.gz % 10;
       const yangYear = yearGan % 2 === 0; // 甲丙戊庚壬 = 양간
-      const forward = gender === "" ? null : ((yangYear && gender === "M") || (!yangYear && gender === "F"));
+      const forward = (gender === "M" || gender === "F") ? ((yangYear && gender === "M") || (!yangYear && gender === "F")) : null;
       if (forward === null) return null;
+      // 절기까지 실제 달력 일수로 계산(30일 모듈러 오차 제거)
       const termDay = TERM_DAY[birthM];
-      const diffDays = forward ? ((termDay + 30 - birthD) % 30) : ((birthD - termDay + 30) % 30);
+      const birthJdn = jdn(birthY, birthM, birthD);
+      let nextTermJdn;
+      if (forward) {
+        // 다음 달 절기일까지
+        const nm = birthM % 12 + 1;
+        const ny = birthM === 12 ? birthY + 1 : birthY;
+        nextTermJdn = jdn(ny, nm, TERM_DAY[nm] || 6);
+      } else {
+        nextTermJdn = jdn(birthY, birthM, termDay);
+      }
+      const diffDays = Math.abs(nextTermJdn - birthJdn);
       const startAge = Math.max(1, Math.round(diffDays / 3));
       const list = [];
       for (let i = 0; i < 8; i++) {
@@ -2004,8 +2015,21 @@
     function renderDaewun(dw, birthY) {
       const box = document.getElementById("daewunResult");
       if (!box) return;
+      // 세운(연간지)은 성별과 무관하므로 대운 미계산 시에도 표시
+      const thisYearAlways = new Date().getFullYear();
+      let seyunAlways = "";
+      for (let i = 0; i < 10; i++) {
+        const y = thisYearAlways + i;
+        const idx = ((y - 4) % 60 + 60) % 60;
+        seyunAlways += `<span style="display: inline-block; margin: 2px 10px 2px 0; color: var(--text-muted);">${y} ${GAN[idx % 10]}${JI[idx % 12]}</span>`;
+      }
       if (!dw) {
-        box.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;\">대운은 성별 입력 시 계산됩니다(전통 방식의 순행·역행 판단에 필요).</p>";
+        box.innerHTML = `
+          <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-top: 12px;">
+            <div style="font-weight: 700; margin-bottom: 8px;">향후 10년 세운</div>
+            <div style="font-size: 0.85rem;">${seyunAlways}</div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">대운(10년 단위 흐름)은 성별 입력 시 계산됩니다(전통 방식의 순행·역행 판단에 필요).</p>
+          </div>`;
         return;
       }
       const thisYear = new Date().getFullYear();
@@ -2315,6 +2339,16 @@
     document.getElementById("v2BirthDate").addEventListener("change", resetOneShotPending);
     document.getElementById("v2BirthTime").addEventListener("change", resetOneShotPending);
     document.getElementById("v2NoTime").addEventListener("change", resetOneShotPending);
+    document.getElementById("v2Gender").addEventListener("change", () => {
+      resetOneShotPending();
+      // 사주가 이미 계산돼 있으면 대운만 재계산·렌더
+      if (v2State.saju && document.getElementById("v2BirthDate").value) {
+        const dv = document.getElementById("v2BirthDate").value.split("-").map(Number);
+        const pillars = calcPillars(dv[0], dv[1], dv[2], null, true);
+        const dw = calcDaewun(pillars, dv[0], dv[1], dv[2], document.getElementById("v2Gender").value);
+        renderDaewun(dw, dv[0]);
+      }
+    });
 
     speakerSelect.addEventListener("change", (e) => {
       selectedSpeaker = e.target.value;
