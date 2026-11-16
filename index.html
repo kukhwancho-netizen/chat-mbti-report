@@ -747,7 +747,7 @@
           <!-- 프리미엄 상세 리포트 결제 (500원 — 토스페이먼츠) -->
           <div id="premiumGate" style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-top: 12px; text-align: center;">
             <div style="font-weight: 700; margin-bottom: 6px;">멘탈제갈량 상세 리포트 (500원)</div>
-            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">명식·대운·연운까지 포함한 종합 리포트를 하나의 이미지(PNG)로 저장합니다. 결제 확인은 서버(Cloudflare Workers)에서 검증합니다.</p>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">명식·대운이 표기된 종합 요약 카드를 하나의 이미지(PNG)로 저장합니다. 결제 확인은 서버(Cloudflare Workers)에서 검증합니다.</p>
             <button id="btnPremiumPay" class="btn-primary">500원 결제하고 상세 리포트 저장</button>
             <div id="premiumStatus" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;"></div>
           </div>
@@ -1479,6 +1479,7 @@
     // 태양 시황경 Meeus 저정밀 근사 — KASI 역서 대조 오차 ±10분 내외(입춘 2020/18:03·2024/17:27·2026/05:02 검증)
     // 한계: ΔT 미적용, 출생지 경도 보정·균시차 미적용(민간시 기준), 역사적 시간대(1908~1961 UTC+8:30·1987~88 DST) 미적용
     const TERM_LONG = { 1: 285, 2: 315, 3: 345, 4: 15, 5: 45, 6: 75, 7: 105, 8: 135, 9: 165, 10: 195, 11: 225, 12: 255 };
+    const TERM_APPROX = { 1: 5, 2: 4, 3: 5, 4: 4, 5: 5, 6: 5, 7: 7, 8: 7, 9: 7, 10: 8, 11: 7, 12: 7 }; // 절기 계산 실패 시 폴백일
     const MONTH_BRANCH_TERM = { 1: "子", 2: "寅", 3: "卯", 4: "辰", 5: "巳", 6: "午", 7: "未", 8: "申", 9: "酉", 10: "戌", 11: "亥", 12: "子" };
 
     function sunApparentLongitude(jd) {
@@ -1552,7 +1553,11 @@
     }
 
     function calcPillars(y, m, d, hour, noTime) {
-      const afterIpchun = (m > 2) || (m === 2 && d >= TERM_DAY[2]);
+      // 입춘 절입 시각(태양 황경 315°) 기준 연도 경계 판정
+      const ipchun = findTermKST(y, 2);
+      const birthMinutes = d * 1440 + (hour || 0) * 60;
+      const termMinutes = ipchun ? ipchun.day * 1440 + ipchun.hour * 60 + ipchun.minute : (TERM_APPROX[2] * 1440);
+      const afterIpchun = (m > 2) || (m === 2 && birthMinutes >= termMinutes);
       const yearNum = afterIpchun ? y : y - 1;
       const yearIdx = ((yearNum - 4) % 60 + 60) % 60;
       const branch = monthBranch(y, m, d, hour);
@@ -1991,6 +1996,10 @@
 
     if (document.getElementById("btnPremiumPay")) {
       document.getElementById("btnPremiumPay").addEventListener("click", async () => {
+        if (TOSS_CLIENT_KEY && !WORKERS_URL || !TOSS_CLIENT_KEY && WORKERS_URL) {
+          alert("설정 오류: 실결제는 클라이언트 키와 Workers URL이 모두 필요합니다. 데모 모드로는 진행하지 않습니다.");
+          return;
+        }
         if (TOSS_CLIENT_KEY && WORKERS_URL) {
           try {
             const TossPayments = await loadTossSdkAndPay();
@@ -2014,11 +2023,16 @@
         alert("데모 모드: 실제 결제 없이 상세 리포트 저장이 활성화됐습니다.\n(브라우저 토큰이며 실결제 연동 시 서버 검증으로 전환됩니다)");
       });
     }
-    // 결제 리다이렉트 복귀 처리(성공 URL만으로는 열람권을 주지 않는다 — 서버 confirm 결과 필요)
+    // 결제 리다이렉트 복귀: 서버 confirm 결과가 있어야만 열람권 발급(성공 쿼리만으로 발급 금지)
     try {
-      if (/[?&]payment=success/.test(location.search)) {
-        premiumPaid = true; // Workers가 같은 오리진에서 리다이렉트를 검증 후 돌려주는 흐름 전제
-        savePremiumToken(false);
+      const qs = new URLSearchParams(location.search);
+      if (qs.get("payment") === "success" && qs.get("paymentKey") && qs.get("orderId") && WORKERS_URL) {
+        confirmOnServer(qs.get("paymentKey"), qs.get("orderId"), 500)
+          .then(() => { premiumPaid = true; savePremiumToken(false); renderPremiumState(); alert("결제가 승인되어 상세 리포트 저장이 활성화됩니다."); })
+          .catch(e => alert("서버 승인 검증 실패: " + e.message));
+      } else if (qs.get("payment") === "success") {
+        const st = document.getElementById("premiumStatus");
+        if (st) st.textContent = "결제 리다이렉트 도착 — 서버 승인 검증(WORKERS_URL) 설정 후 열람권이 발급됩니다.";
       }
     } catch (e) {}
     renderPremiumState();
@@ -2065,7 +2079,7 @@
       });
     }
 
-    const v2State = { saju: null, tci: null, mbti: null };
+    const v2State = { saju: null, tci: null, mbti: null, daewun: null };
 
     function renderSaju(pillars) {
       const box = document.getElementById("sajuResult");
@@ -2142,6 +2156,7 @@
       v2State.saju = sajuSummary(pillars);
       renderSaju(pillars);
       const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value, hour);
+      v2State.daewun = dw;
       renderDaewun(dw, parts[0]);
       renderFusionIfReady();
       return true;
@@ -2152,9 +2167,19 @@
       const yangYear = yearGan % 2 === 0; // 甲丙戊庚壬 = 양간
       const forward = (gender === "M" || gender === "F") ? ((yangYear && gender === "M") || (!yangYear && gender === "F")) : null;
       if (forward === null) return null;
-      // 입절 시각까지 실제 경과(일 단위, 시각 포함) — 순행은 다음 달 절기, 역행은 이번 달 절기
-      const termY = forward ? (birthM === 12 ? birthY + 1 : birthY) : birthY;
-      const termM = forward ? (birthM % 12 + 1) : birthM;
+      // 입절 시각까지 실제 경과 — 출생이 입절 전인지 확인 후 선택
+      // 순행: 출생이 이번 월 입절 전이면 이번 월 절기까지, 후면 다음 월 절기까지
+      // 역행: 출생이 이번 월 입절 전이면 이전 월 절기까지, 후면 이번 월 절기까지
+      const curTerm = findTermKST(birthY, birthM);
+      const beforeTerm = curTerm ? (birthD < curTerm.day) : false;
+      let termY = birthY, termM = birthM;
+      if (forward) {
+        if (beforeTerm) { termY = birthY; termM = birthM; }
+        else { termY = birthM === 12 ? birthY + 1 : birthY; termM = birthM % 12 + 1; }
+      } else {
+        if (beforeTerm) { termY = birthM === 1 ? birthY - 1 : birthY; termM = birthM === 1 ? 12 : birthM - 1; }
+        else { termY = birthY; termM = birthM; }
+      }
       const t = findTermKST(termY, termM);
       if (!t) return null;
       const termJd = jdn(termY, termM, t.day) + (t.hour - 12) / 24 + t.minute / 1440;
@@ -2772,6 +2797,7 @@
 
     // Canvas 공유 카드 그리기 (P1-1, P2-6)
     function drawShareCard(mbti, metrics, speakerLabel) {
+      const thisYear2 = new Date().getFullYear();
       const ctx = shareCanvas.getContext("2d");
       const W = shareCanvas.width;  // 800
       const H = shareCanvas.height; // 960
@@ -2856,10 +2882,17 @@
         ctx.fill();
       });
 
+      // 명식·대운 요약(v2.1 — 500원 상세 리포트 약속 정합) — 지표 박스에 통합
+      let sajuLine = null;
+      if (v2State && v2State.saju) {
+        const pp = v2State.saju.pillars;
+        sajuLine = "명식 " + [pp.year, pp.month, pp.day, pp.hour].map(x => x ? `${x.gan}${x.ji}` : "—").join(" ");
+      }
+
       // 정량 지표 요약 (P2-6)
       ctx.fillStyle = "#FFFFFF";
       ctx.beginPath();
-      ctx.roundRect(80, 620, W - 160, 100, 14);
+      ctx.roundRect(80, 620, W - 160, sajuLine ? 130 : 100, 14);
       ctx.fill();
       ctx.strokeStyle = "#E2E8F0";
       ctx.stroke();
@@ -2867,10 +2900,23 @@
       ctx.textAlign = "center";
       ctx.fillStyle = "#0F172A";
       ctx.font = "bold 17px sans-serif";
-      ctx.fillText(`발화 수: ${metrics.count}개  |  평균 글자: ${metrics.avgLen}자  |  개시율: ${metrics.initiateRateDisplay}`, W / 2, 660);
+      ctx.fillText(`발화 수: ${metrics.count}개  |  평균 글자: ${metrics.avgLen}자  |  개시율: ${metrics.initiateRateDisplay}`, W / 2, 655);
       ctx.fillStyle = "#64748B";
       ctx.font = "15px sans-serif";
-      ctx.fillText(`응답 지연: ${metrics.avgLatencyDisplay}  |  웃음(ㅋ/ㅎ): ${metrics.laughDensity}%  |  이모지: ${metrics.emojiDensity}%`, W / 2, 695);
+      ctx.fillText(`응답 지연: ${metrics.avgLatencyDisplay}  |  웃음(ㅋ/ㅎ): ${metrics.laughDensity}%  |  이모지: ${metrics.emojiDensity}%`, W / 2, 685);
+      if (sajuLine) {
+        ctx.fillStyle = "#18181B";
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillText(sajuLine, W / 2, 715);
+        if (v2State && v2State.daewun) {
+          const cur = v2State.daewun.list.find(d => thisYear2 >= d.age && thisYear2 < d.age + 10);
+          if (cur) {
+            ctx.fillStyle = "#64748B";
+            ctx.font = "14px sans-serif";
+            ctx.fillText(`현재 대운: ${cur.age}세~${cur.age + 9}세 ${cur.gan}${cur.ji}`, W / 2, 740);
+          }
+        }
+      }
 
       // 대표 발화 인용문 (유효 인용이 없으면 문장을 만들지 않고 근거 부족을 표시한다 — 가짜 인용 금지)
       let featuredQuote = null;

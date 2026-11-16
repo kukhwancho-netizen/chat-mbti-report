@@ -21,7 +21,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: cors() });
+      return new Response(null, { headers: cors(request.headers.get("Origin")) });
     }
     if (url.pathname === "/payments/confirm" && request.method === "POST") {
       try {
@@ -57,9 +57,11 @@ export default {
   }
 };
 
-function cors() {
+function cors(originHeader) {
+  // ALLOWED_ORIGIN 환경변수(배포 도메인) 설정 권장 — 미설정 시 "*"(데모)
+  const origin = env.ALLOWED_ORIGIN || "*";
   return {
-    "Access-Control-Allow-Origin": "*", // 실서비스는 배포 도메인으로 한정 권장
+    "Access-Control-Allow-Origin": originHeader && origin === "*" ? originHeader : origin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type"
   };
@@ -68,6 +70,6 @@ function cors() {
 function json(obj, status) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { "Content-Type": "application/json", ...cors() }
+    headers: { "Content-Type": "application/json", ...cors(request.headers.get("Origin")) }
   });
 }
