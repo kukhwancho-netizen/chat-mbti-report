@@ -359,7 +359,19 @@ assert.strictEqual(getPaywallToken(), null, '금액이 조작된 토큰은 무�
 assert.strictEqual(mockLocalStorage.getItem(STORAGE_PAYWALL_TOKEN_KEY), null, '위조 토큰은 localStorage에서 제거되어야 합니다.');
 assert.strictEqual(checkPaywallUnlocked(), false, '위조 토큰으로는 잠금이 해제되지 않아야 합니다.');
 
-// 10-4. 입력 변경 리셋 시 근거 카드·리포트 필드·canvas까지 실제로 비워짐 (DOM 잔류 제거)
+// 10-4. 컨텐츠 톤 가이드: 페르소나·한 줄 요약이 16유형 전부 채워져 있어야 함 (신박하고 재미있게)
+const { PERSONA_MAP, PERSONA_ONE_LINER } = sandbox;
+const ALL_TYPES = ["INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP",
+  "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"];
+ALL_TYPES.forEach(t => {
+  assert(PERSONA_MAP[t] && PERSONA_MAP[t].length >= 2, `페르소나 이름 누락: ${t}`);
+  assert(PERSONA_ONE_LINER[t] && PERSONA_ONE_LINER[t].length >= 10, `한 줄 요약 누락: ${t}`);
+});
+const uniquePersonas = new Set(ALL_TYPES.map(t => PERSONA_MAP[t]));
+assert.strictEqual(uniquePersonas.size, 16, '페르소나 이름은 16유형 모두 서로 달라야 합니다.');
+console.log('PASS: 컨텐츠 톤 가이드 (16유형 페르소나·한 줄 요약 전부 존재) 통과');
+
+// 10-5. 입력 변경 리셋 시 근거 카드·리포트 필드·canvas까지 실제로 비워짐 (DOM 잔류 제거)
 const prevQuoteGrid = domElements.get('quoteCardsGrid');
 prevQuoteGrid.innerHTML = '<div class="quote-card">이전 분석 근거</div>';
 const prevCanvas = domElements.get('shareCanvas');

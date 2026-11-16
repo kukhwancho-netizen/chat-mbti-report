@@ -819,10 +819,30 @@
 
     // MBTI 페르소나 매칭 테이블
     const PERSONA_MAP = {
-      "INTJ": "용의주도한 전략가", "INTP": "논리적인 사색가", "ENTJ": "대담한 통솔자", "ENTP": "뜨거운 논쟁을 즐기는 변론가",
-      "INFJ": "통찰력 있는 선지자", "INFP": "열정적인 중재자", "ENFJ": "정의로운 사회운동가", "ENFP": "재기발랄한 활동가",
-      "ISTJ": "청렴결백한 논리주의자", "ISFJ": "용감한 수호자", "ESTJ": "엄격한 관리자", "ESFJ": "사교적인 외교관",
-      "ISTP": "만능 재주꾼", "ISFP": "호기심 많은 예술가", "ESTP": "모험을 즐기는 사업가", "ESFP": "자유로운 영혼의 연예인"
+      "INTJ": "밤샘 체스 마스터", "INTP": "『왜?』 연구소장", "ENTJ": "야망 눈빛 CEO", "ENTP": "아이디어 폭격수",
+      "INFJ": "심야 상담소 소장", "INFP": "감정 기상도 시인", "ENFJ": "마음 리모컨 보유자", "ENFP": "호기심 스파크"
+    , "ISTJ": "걸어다니는 체크리스트", "ISFJ": "조용한 만능 해결사", "ESTJ": "칼같은 일정 장인", "ESFJ": "단체 채팅방의 어머니",
+      "ISTP": "만능 맥가이버", "ISFP": "무드 장인", "ESTP": "일단 던져보는 파이터", "ESFP": "분위기 메이커 겸 스파크"
+    };
+
+    // 신박한 한 줄 요약 (형님 확정: 컨텐츠·질문은 신박하고 재미있게)
+    const PERSONA_ONE_LINER = {
+      "INTJ": "남들이 주말에 쉴 때, 당신은 두 번째 계획안을 검토 중입니다.",
+      "INTP": "오늘 잠든 이유: 새벽 3시에 떠오른 질문 하나.",
+      "ENTJ": "'일단 해'는 당신에게 모욕입니다. '계획대로 해'가 모토.",
+      "ENTP": "반박은 애정 표현, 아이디어는 탄약 — 당신은 항상 무장 상태.",
+      "INFJ": "친구 고민을 다 외운 사람, 자기 고민은 비밀노트에.",
+      "INFP": "마음은 낭만, 현실은 파자마 — 그래서 작법 중.",
+      "ENFJ": "당신이 웃으면 그룹채팅이 30분 더 뜨겁습니다.",
+      "ENFP": "오늘의 관심사는 어제와 다를 수도, 오늘 오후와도 다를 수도.",
+      "ISTJ": "놓친 일정을 상기시켜주는 건 언제나 당신 마음속 알림.",
+      "ISFJ": "말없이 치워진 컵 뒤에 당신이 있습니다.",
+      "ESTJ": "'회의 5분 전'은 당신에게 이미 지각입니다.",
+      "ESFJ": "'밥 먹었어?'는 당신의 인사말이자 사랑의 언어.",
+      "ISTP": "설명서는 읽지 않습니다. 뜯어보면 나옵니다.",
+      "ISFP": "당신 앨범엔 남들이 안 찍는 각도가 있습니다.",
+      "ESTP": "생각 없이 던진 공이 어찌 된 일인지 골인.",
+      "ESFP": "당신이 들어오면 재생 목록이 바뀝니다."
     };
 
     // 상태 변수
@@ -1448,6 +1468,10 @@
           <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-bottom: 10px;">
             🎯 [500원 프리미엄] ${targetLabel} 심층 MBTI 4축 해석 & 소통 전략 (${type})
           </h4>
+          ${(!mbti.isLack && PERSONA_ONE_LINER[mbti.rawType]) ? `
+          <div style="background: #EEF2FF; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.9rem; font-weight: 700; color: #3730A3;">
+            💬 한 줄 요약 — ${PERSONA_ONE_LINER[mbti.rawType]}
+          </div>` : ""}
           <div style="font-size: 0.88rem; color: #334155; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
             <div>
               <strong>• 에너지 방향 (${mbti.axisEI.dominant} 우세, ${mbti.axisEI.leftRatio}% : ${mbti.axisEI.rightRatio}%):</strong>
@@ -1472,6 +1496,9 @@
               ${mbti.axisJP.dominant === 'J'
                 ? `체계적인 시간 계획과 마감 기한 엄수를 통해 심리적 안정감을 얻습니다. 갑작스러운 일정 변경보다는 사전에 합의된 타임라인대로 실행되길 기대합니다.`
                 : `상황 변화에 유연하게 대처하며 즉흥적인 융통성을 발휘합니다. 지나치게 엄격한 규율보다는 자율성과 선택의 여지가 열려 있는 환경을 선호합니다.`}
+            </div>
+            <div style="border-top: 1px dashed #CBD5E1; padding-top: 10px; font-size: 0.82rem; color: #64748B; font-style: italic;">
+              🍀 총평: 당신의 카톡은 이미 당신을 꽤 잘 알고 있었습니다. (당신만 몰랐을 뿐)
             </div>
           </div>
         </div>
@@ -1920,6 +1947,12 @@
       }
       ctx.fillText(featuredQuote, W / 2, 770);
 
+      // 신박한 태그라인 (형님 확정: 컨텐츠는 신박하고 재미있게)
+      ctx.fillStyle = "#4F46E5";
+      ctx.font = "bold 18px sans-serif";
+      const cardTagline = mbti.isLack ? "네 카톡, 아직 말해줄 게 남았어요" : "네 카톡이 너를 말해줬어요 💬";
+      ctx.fillText(cardTagline, W / 2, 815);
+
       // 하단 카피라이트 및 비진단 안내
       ctx.fillStyle = "#94A3B8";
       ctx.font = "13px sans-serif";
@@ -1955,6 +1988,7 @@
       globalThis.scoreMBTI = scoreMBTI;
       globalThis.DICTIONARY = DICTIONARY;
       globalThis.PERSONA_MAP = PERSONA_MAP;
+      globalThis.PERSONA_ONE_LINER = PERSONA_ONE_LINER;
       globalThis.TOSS_PAYMENTS_CLIENT_KEY = TOSS_PAYMENTS_CLIENT_KEY;
       globalThis.PAYWALL_PRICE = PAYWALL_PRICE;
       globalThis.STORAGE_PAYWALL_TOKEN_KEY = STORAGE_PAYWALL_TOKEN_KEY;
@@ -1983,6 +2017,7 @@
         scoreMBTI,
         DICTIONARY,
         PERSONA_MAP,
+        PERSONA_ONE_LINER,
         TOSS_PAYMENTS_CLIENT_KEY,
         PAYWALL_PRICE,
         STORAGE_PAYWALL_TOKEN_KEY,
