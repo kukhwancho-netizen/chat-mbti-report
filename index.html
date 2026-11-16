@@ -1468,7 +1468,7 @@
     }
 
     // ===================== v2: 사주 · TCI 3소스 종합 =====================
-    // 만세력 계산 — ruleVersion "v2-approx"
+    // 만세력 계산 — ruleVersion "v2.1-termlong"(태양 황경 절기 + KASI 역서 대조)
     // 한계 명시: 절기일은 평균 근사(경계일 ±1일 오차 가능), 시간대는 UTC+9 고정(역사적 시간대·서머타임 미적용),
     // 진태양시 미적용(민간시 기준), 일자 경계는 0시 기준(야자시 다음날 취급 미적용). 정밀 명식은 KASI 데이터 기반이 필요합니다.
     const GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
@@ -2146,7 +2146,7 @@
       renderFusionIfReady();
       return true;
     }
-    // 대운·연운 — ruleVersion v2-approx (근사 절기 기반, 대운수 ±0.3년 오차 가능)
+    // 대운·연운 — ruleVersion v2.1-termlong(정밀 절기 기반 대운수)
     function calcDaewun(pillars, birthY, birthM, birthD, gender, birthHour) {
       const yearGan = pillars.year.gz % 10;
       const yangYear = yearGan % 2 === 0; // 甲丙戊庚壬 = 양간
