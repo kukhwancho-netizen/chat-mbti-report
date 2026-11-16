@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>카카오톡 대화 기반 MBTI 자기이해 리포트 (클라이언트 전용)</title>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-hover: #4338CA;
+      --primary-light: #EEF2FF;
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --accent: #0EA5E9;
+      --accent-green: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-purple: #8B5CF6;
+      --danger: #EF4444;
+      --radius: 14px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 24px 16px 60px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* 헤더 및 안내문 */
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary);
+      background-color: var(--primary-light);
+      border-radius: 9999px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    /* 공지 배너 */
+    .notice-card {
+      background-color: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .notice-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: #166534;
+    }
+
+    .notice-item strong {
+      color: #14532D;
+      white-space: nowrap;
+    }
+
+    /* 카드 기본 스타일 */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* 입력 영역 */
+    textarea {
+      width: 100%;
+      height: 180px;
+      padding: 14px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      background-color: #FAFAFA;
+      font-family: monospace;
+    }
+
+    textarea:focus {
+      border-color: var(--primary);
+      background-color: #FFFFFF;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #FFFFFF;
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #F1F5F9;
+      color: #334155;
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background-color: #E2E8F0;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+    .btn-outline:hover {
+      background-color: var(--primary-light);
+    }
+
+    /* 설정 영역: 화자 선택 등 */
+    .settings-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    select {
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: #FFFFFF;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    /* 리포트 결과 영역 */
+    .report-header {
+      text-align: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+    }
+
+    .mbti-type-badge {
+      display: inline-block;
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+      text-shadow: 0 2px 4px rgba(79, 70, 229, 0.15);
+    }
+
+    .mbti-persona {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1E1B4B;
+      margin-top: 4px;
+    }
+
+    .mbti-target-info {
+      font-size: 0.9rem;
+      color: #4338CA;
+      margin-top: 6px;
+    }
+
+    /* 4축 스펙트럼 바 */
+    .axis-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .axis-card {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+
+    .axis-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .axis-ratio-bar-wrapper {
+      height: 12px;
+      background: #E2E8F0;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .axis-bar-left {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.4s ease;
+    }
+
+    .axis-bar-right {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.4s ease;
+    }
+
+    .axis-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-ok {
+      background: #DCFCE7;
+      color: #15803D;
+    }
+    .status-lack {
+      background: #FEE2E2;
+      color: #B91C1C;
+    }
+
+    /* 정량 지표 패널 */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .metric-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .metric-box-val {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .metric-box-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* 원문 근거 인용 카드 */
+    .quote-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .quote-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: 8px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .quote-axis-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .quote-text {
+      font-size: 0.88rem;
+      color: #334155;
+      line-height: 1.5;
+      font-style: italic;
+      background: #F8FAFC;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+
+    .quote-reason {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .highlight {
+      background-color: #FEF08A;
+      padding: 0 2px;
+      font-weight: 600;
+      border-radius: 2px;
+    }
+
+    /* 캔버스 및 공유카드 */
+    .canvas-preview-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-top: 20px;
+      padding: 20px;
+      background: #F1F5F9;
+      border-radius: var(--radius);
+    }
+
+    #shareCanvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      background-color: #FFFFFF;
+    }
+
+    /* PII 마스킹 미리보기 모달 / 토글 영역 */
+    .pii-preview {
+      margin-top: 16px;
+      padding: 14px;
+      background: #F8FAFC;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      font-family: monospace;
+      white-space: pre-wrap;
+      color: #334155;
+    }
+
+    /* v2 티저 훅 */
+    .v2-teaser-card {
+      background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%);
+      border: 1px solid #E9D5FF;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-top: 32px;
+    }
+
+    .v2-teaser-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #6B21A8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .v2-teaser-desc {
+      font-size: 0.88rem;
+      color: #581C87;
+      line-height: 1.5;
+    }
+
+    .v2-tag-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .v2-tag {
+      background: #FFFFFF;
+      color: #7E22CE;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid #D8B4FE;
+    }
+
+    /* 반응형 */
+    @media (max-width: 640px) {
+      h1 { font-size: 1.6rem; }
+      .card { padding: 16px; }
+      .mbti-type-badge { font-size: 2.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 서비스 헤더 -->
+    <header>
+      <div class="badge-pill">무서버 브라우저 전용 v1 프로토타입</div>
+      <h1>카카오톡 대화 기반 MBTI 자기이해 리포트</h1>
+      <p class="subtitle">개인정보 자동 마스킹 · 정량 커뮤니케이션 지표 · 4축 성향 원문 근거 인용 · 공유카드 생성</p>
+    </header>
+
+    <!-- 원문 비전송 및 비진단 원칙 고지 배너 -->
+    <section class="notice-card">
+      <div class="notice-item">
+        <strong>🔒 브라우저 메모리 격리 (비전송 원칙)</strong>
+        <span>입력하신 카카오톡 대화 내용은 외부 서버로 <strong>비전송</strong>되며, 오직 현재 브라우저 탭 내에서만 파싱 및 마스킹 처리된 후 즉시 소멸합니다.</span>
+      </div>
+      <div class="notice-item">
+        <strong>💡 자기이해 목적 고지</strong>
+        <span>본 결과는 의료·임상적 진단이 아니며, 카카오톡 일상 텍스트 패턴을 통해 스스로의 소통 방식을 돌아보는 <strong>자기이해</strong> 보조 리포트입니다.</span>
+      </div>
+    </section>
+
+    <!-- 대화 텍스트 입력 및 PII 설정 카드 -->
+    <section class="card">
+      <div class="card-title">
+        <span>💬 카카오톡 대화 입력</span>
+        <button id="btnLoadSample" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
+          📄 샘플 대화 불러오기
+        </button>
+      </div>
+      <textarea id="rawChatInput" placeholder="카카오톡 PC 내보내기 텍스트를 이곳에 붙여넣으세요...&#10;형식 예시:&#10;--------------- 2026년 11월 14일 토요일 ---------------&#10;[오전 10:15] 김철수 : 안녕하세요! 이번 주말 일정 체크해봐요."></textarea>
+      
+      <div class="settings-row">
+        <div class="form-group">
+          <label class="form-label" for="speakerSelect">분석 대상 화자 선택 (본인 지정 시 '나(화자A)'로 치환)</label>
+          <select id="speakerSelect">
+            <option value="">대화를 입력하거나 파싱하면 화자 목록이 나타납니다</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">개인정보(PII) 마스킹 대상</label>
+          <div style="font-size: 0.8rem; color: var(--text-muted); padding-top: 6px;">
+            ✓ 실명 화자명 (나: 화자A / 상대: 화자B, C...)<br>
+            ✓ 전화번호 (010-XXXX-XXXX)<br>
+            ✓ 계좌번호 및 이메일 주소 마스킹 처리
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="btnAnalyze" class="btn-primary">
+          ⚡ 리포트 생성 및 분석
+        </button>
+        <button id="btnToggleMasked" class="btn-outline">
+          👁️ 마스킹된 대화문 확인
+        </button>
+      </div>
+
+      <div id="maskedPreviewWrapper" style="display: none; margin-top: 14px;">
+        <label class="form-label">🔒 마스킹 처리된 대화 원문 미리보기 (개인정보 보호 적용)</label>
+        <div id="maskedChatPreview" class="pii-preview"></div>
+      </div>
+    </section>
+
+    <!-- 분석 결과 리포트 영역 -->
+    <div id="reportSection" style="display: none;">
+      <!-- 결과 요약 헤더 -->
+      <section class="report-header">
+        <div class="mbti-type-badge" id="mbtiTypeDisplay">ENFJ</div>
+        <div class="mbti-persona" id="mbtiPersonaDisplay">다정한 분위기 메이커</div>
+        <div class="mbti-target-info" id="mbtiTargetDisplay">분석 대상: 나(화자A) | 총 0개 발화 분석</div>
+      </section>
+
+      <!-- 정량 커뮤니케이션 지표 패널 -->
+      <section class="card">
+        <div class="card-title">📊 정량 커뮤니케이션 분석 지표</div>
+        <div class="metric-grid">
+          <div class="metric-box">
+            <div class="metric-box-val" id="metricMsgCount">0</div>
+            <div class="metric-box-label">발화 메시지 수</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-box-val" id="metricAvgLen">0자</div>
+            <div class="metric-box-label">평균 발화 길이</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-box-val" id="metricInitiateRate">0%</div>
+            <div class="metric-box-label">대화 개시율</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-box-val" id="metricAvgLatency">0분</div>
+            <div class="metric-box-label">평균 응답 지연</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-box-val" id="metricLaughDensity">0%</div>
+            <div class="metric-box-label">웃음(ㅋ/ㅎ) 밀도</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-box-val" id="metricEmojiDensity">0%</div>
+            <div class="metric-box-label">이모지/기호 밀도</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4축 MBTI 스펙트럼 및 신뢰도 -->
+      <section class="card">
+        <div class="card-title">
+          <span>🧭 4축 성향 스펙트럼 & 신뢰도 분석</span>
+          <span id="overallConfidenceBadge" class="status-badge status-ok">신뢰도 양호</span>
+        </div>
+        <div class="axis-container" id="axisBarsContainer">
+          <!-- E/I Axis -->
+          <div class="axis-card">
+            <div class="axis-labels">
+              <span>외향 (E) <span id="valE">50%</span></span>
+              <span>내향 (I) <span id="valI">50%</span></span>
+            </div>
+            <div class="axis-ratio-bar-wrapper">
+              <div id="barE" class="axis-bar-left" style="width: 50%;"></div>
+              <div id="barI" class="axis-bar-right" style="width: 50%;"></div>
+            </div>
+            <div class="axis-meta">
+              <span id="evidenceE">활동·관계 에너지 지표 반영</span>
+              <span id="statusE" class="status-badge status-ok">신뢰도 80%</span>
+            </div>
+          </div>
+
+          <!-- S/N Axis -->
+          <div class="axis-card">
+            <div class="axis-labels">
+              <span>감각 (S) <span id="valS">50%</span></span>
+              <span>직관 (N) <span id="valN">50%</span></span>
+            </div>
+            <div class="axis-ratio-bar-wrapper">
+              <div id="barS" class="axis-bar-left" style="width: 50%;"></div>
+              <div id="barN" class="axis-bar-right" style="width: 50%;"></div>
+            </div>
+            <div class="axis-meta">
+              <span id="evidenceS">구체적 팩트 vs 아이디어 비전 지표</span>
+              <span id="statusS" class="status-badge status-ok">신뢰도 80%</span>
+            </div>
+          </div>
+
+          <!-- T/F Axis -->
+          <div class="axis-card">
+            <div class="axis-labels">
+              <span>사고 (T) <span id="valT">50%</span></span>
+              <span>감정 (F) <span id="valF">50%</span></span>
+            </div>
+            <div class="axis-ratio-bar-wrapper">
+              <div id="barT" class="axis-bar-left" style="width: 50%;"></div>
+              <div id="barF" class="axis-bar-right" style="width: 50%;"></div>
+            </div>
+            <div class="axis-meta">
+              <span id="evidenceT">논리·원칙 vs 공감·관계 중심 지표</span>
+              <span id="statusT" class="status-badge status-ok">신뢰도 80%</span>
+            </div>
+          </div>
+
+          <!-- J/P Axis -->
+          <div class="axis-card">
+            <div class="axis-labels">
+              <span>판단 (J) <span id="valJ">50%</span></span>
+              <span>인식 (P) <span id="valP">50%</span></span>
+            </div>
+            <div class="axis-ratio-bar-wrapper">
+              <div id="barJ" class="axis-bar-left" style="width: 50%;"></div>
+              <div id="barP" class="axis-bar-right" style="width: 50%;"></div>
+            </div>
+            <div class="axis-meta">
+              <span id="evidenceJ">계획·체계성 vs 유연성·즉흥성 지표</span>
+              <span id="statusJ" class="status-badge status-ok">신뢰도 80%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 축별 마스킹 원문 근거 인용 카드 -->
+      <section class="card">
+        <div class="card-title">🔍 축별 마스킹 원문 근거 인용 카드</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+          각 축 판정에 유의미하게 기여한 실제 발화 문장입니다. 개인정보는 완벽히 마스킹된 상태로 인용됩니다.
+        </p>
+        <div class="quote-grid" id="quoteCardsGrid">
+          <!-- 동적으로 채워짐 -->
+        </div>
+      </section>
+
+      <!-- HTML5 Canvas 요약 카드 및 PNG 다운로드 -->
+      <section class="card">
+        <div class="card-title">
+          <span>🎨 리포트 요약 카드 (PNG 다운로드)</span>
+          <button id="btnDownloadCard" class="btn-primary">
+            📥 PNG 이미지 저장하기
+          </button>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          아래 카드는 브라우저 내부의 HTML5 Canvas API로 실시간 렌더링되며 toDataURL을 통해 즉시 이미지 파일로 추출됩니다.
+        </p>
+        <div class="canvas-preview-container">
+          <canvas id="shareCanvas" width="800" height="960"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- v2 확장 사주·TCI 융합 분석 티저 -->
+    <section class="v2-teaser-card">
+      <div class="v2-teaser-title">
+        <span>🔮 v2 차세대 융합 엔진 티저: 사주 명식 & TCI 다각화 결합</span>
+      </div>
+      <p class="v2-teaser-desc">
+        v2 버전에서는 단순 언어 습관을 넘어 <strong>사주 8자·오행 분포·십성 명식</strong> 계산 모듈과 
+        신뢰할 수 있는 <strong>검토 루브릭</strong> 체계를 탑재합니다. 여기에 12~20문항의 <strong>TCI</strong>(기질 및 성격 검사) 
+        미니 자기보고를 흡수하여, [대화 텍스트 휴리스틱 + 사주 명리 + TCI 심리측정] 3소스가 융합된 입체적 자기이해 엔진을 제공할 예정입니다.
+      </p>
+      <div class="v2-tag-group">
+        <span class="v2-tag">사주 오행 분포 (목·화·토·금·수)</span>
+        <span class="v2-tag">십성 명식 (비견·겁재·식신·상관 등)</span>
+        <span class="v2-tag">사주 기초검토 루브릭</span>
+        <span class="v2-tag">TCI 기질 4차원 & 성격 3차원</span>
+        <span class="v2-tag">3소스 크로스 융합 분석</span>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // 샘플 대화 데이터 (자체 내장)
+    const SAMPLE_CONVERSATION = `--------------- 2026년 11월 14일 토요일 ---------------
+[오전 10:15] 김철수 : 안녕하세요 여러분! 이번 주말 프로젝트 워크숍 일정 관련해서 논의해봐요.
+[오전 10:16] 김철수 : 일단 제가 작성한 타임테이블 체크리스트 공유드립니다.
+시간대별 계획표(10시 기획회의, 12시 점심, 14시 중간점검)대로 칼같이 지키면서 효율적으로 일정을 진행해야 마음이 편할 것 같아요.
+[오전 10:18] 이영희 : 철수님 안녕하세요~ 와 주말인데 사람들도 많이 모아서 파티 분위기로 신나게 하면 좋겠어요 ㅎㅎㅎ
+여럿이 모여서 시끌벅적하게 에너지 채우면서 대화하는 거 너무 좋아하거든요!
+[오전 10:20] 박민수 : 안녕하세요. 저는 구체적인 예산 데이터와 지난번 실측 비용 팩트부터 정리하는 게 먼저라고 봅니다.
+영수증 확인해보니 지난 워크숍 1인당 실제 지출 비용이 정확히 48,500원이었어요.
+현실적인 숫자를 기반으로 명확하게 오차 없이 정산하죠.
+[오전 10:22] 최유진 : 저는 구체적인 숫자나 데이터 정리보다는, 이번 모임이 각 구성원들에게 어떤 깊은 의미를 남길지, 미래에 우리가 함께 만들어낼 새로운 가능성과 비전이 더 기대돼요! ✨
+상상만 해도 가슴 뛰고 멋진 영감과 직관적 아이디어가 마구 샘솟는 기분이에요 ㅋㅋㅋ
+[오전 10:25] 김철수 : 유진님의 영감도 좋지만, 논리적인 문제 해결과 객관적인 판단 기준이 먼저 바로잡혀야 프로젝트 오류가 없습니다.
+합리적인 분석과 원칙 시스템을 확립하는 것이 최우선 과제입니다.
+[오전 10:27] 이영희 : 에이 철수님 너무 딱딱하게 원칙만 따지지 마세요 ㅠㅠ
+팀원들 마음과 감정도 살피고, 서로 따뜻하게 공감해주고 배려하는 분위기가 훨씬 중요하잖아요! 다들 지쳐있는데 힐링도 필요해요.
+[오전 10:30] 최유진 : 맞아요 영희님 말씀에 완전 공감해요 ㅎㅎ 마음이 편해야 아이디어도 잘 나오죠.
+그리고 일정 너무 빡빡하게 계획 세우지 말고 그날 분위기나 흐름 보고 유연하게 즉흥적으로 결정해도 괜찮지 않나요?
+발길 닿는 대로 자유롭게 상황 봐가면서 융통성 있게 변경해요!
+[오전 10:33] 박민수 : 진행 비용 정산 관련해서 제 계좌번호 남겨놓겠습니다.
+국민은행 123-45-678901 로 회비 50,000원 입금 부탁드려요.
+혹시 문의사항 있으시면 제 휴대전화 010-9876-5432 로 문자 주시거나
+이메일 minsu.park@example.com 으로 세부 피드백 보내주시면 팩트 체크하겠습니다.
+[오전 10:36] 이영희 : 넵 민수님 확인했어요!
+저도 카카오뱅크 3333-01-2345678 로 간식비 1만원 보냈습니다~
+제 비상 연락처는 010-1234-5678 이고 이메일은 younghee_lee@sample.org 예요!
+다같이 모여서 신나게 수다 떨고 즐거운 시간 보내요 ㅋㅋㅋ
+[오전 10:40] 김철수 : 마감 시간은 오늘 오후 6시까지로 최종 확정하겠습니다.
+체계적인 규칙에 따라 기한 내에 사전 준비물 체크리스트 반드시 확인해주세요.
+
+--------------- 2026년 11월 15일 일요일 ---------------
+[오전 11:00] 김철수 : 오늘 일정 시작합니다. 전원 계획대로 집결 완료 확인했습니다.
+[오전 11:05] 최유진 : 날씨도 좋고 새로운 가능성이 활짝 열릴 것 같은 예감이 드네요! 직관적으로 떠오르는 창의적 콘셉트들을 브레인스토밍 해봐요.
+[오전 11:08] 박민수 : 네, 현실적인 적용 가능성과 현장 조건 세부 사실들을 대조하면서 검증해보겠습니다.
+[오전 11:12] 이영희 : 다들 오늘 파이팅이에요! 팀원들과 함께하는 이 에너지가 너무 좋아요 ㅋㅋㅋ`;
+
+    // 4축 성향 어휘 사전
+    const DICTIONARY = {
+      E: ["모임", "모여", "다같이", "파티", "여럿이", "에너지", "사람들", "신나", "수다", "함께", "친구들", "외출", "대화", "놀자", "파이팅", "시끌벅적"],
+      I: ["혼자", "조용히", "집", "내면", "소수", "쉼", "쉬자", "혼밥", "생각", "차분", "침대", "피곤", "혼행", "방콕", "개인", "스스로"],
+      S: ["현실", "사실", "팩트", "구체적", "데이터", "세부", "실용", "영수증", "비용", "숫자", "정산", "실제", "꼼꼼", "정확", "현장", "체크"],
+      N: ["상상", "아이디어", "미래", "가능성", "영감", "직관", "비전", "의미", "꿈", "새로운", "콘셉트", "잠재력", "예감", "브레인스토밍", "창의"],
+      T: ["논리", "객관", "분석", "원인", "해결", "기준", "효율", "원칙", "합리", "이유", "비판", "결론", "오류", "시스템", "과제", "공정"],
+      F: ["마음", "감정", "공감", "기분", "상처", "따뜻", "배려", "힐링", "슬퍼", "위로", "고마워", "미안", "좋아", "정서", "느낌", "응원"],
+      J: ["계획", "일정", "미리", "체계", "정리", "마감", "약속", "체크리스트", "규칙", "시간표", "순서", "준비", "칼같이", "기한", "확정", "타임테이블"],
+      P: ["즉흥", "유연", "그때", "자유", "편하게", "흐름", "일단", "알아서", "변경", "상황 봐", "융통성", "발길 닿는 대로", "당일", "자유롭게"]
+    };
+
+    // MBTI 페르소나 매칭 테이블
+    const PERSONA_MAP = {
+      "INTJ": "용의주도한 전략가", "INTP": "논리적인 사색가", "ENTJ": "대담한 통솔자", "ENTP": "뜨거운 논쟁을 즐기는 변론가",
+      "INFJ": "통찰력 있는 선지자", "INFP": "열정적인 중재자", "ENFJ": "정의로운 사회운동가", "ENFP": "재기발랄한 활동가",
+      "ISTJ": "청렴결백한 논리주의자", "ISFJ": "용감한 수호자", "ESTJ": "엄격한 관리자", "ESFJ": "사교적인 외교관",
+      "ISTP": "만능 재주꾼", "ISFP": "호기심 많은 예술가", "ESTP": "모험을 즐기는 사업가", "ESFP": "자유로운 영혼의 연예인"
+    };
+
+    // 상태 변수
+    let parsedData = null;
+    let selectedSpeaker = "";
+
+    // DOM 요소
+    const rawChatInput = document.getElementById("rawChatInput");
+    const btnLoadSample = document.getElementById("btnLoadSample");
+    const speakerSelect = document.getElementById("speakerSelect");
+    const btnAnalyze = document.getElementById("btnAnalyze");
+    const btnToggleMasked = document.getElementById("btnToggleMasked");
+    const maskedPreviewWrapper = document.getElementById("maskedPreviewWrapper");
+    const maskedChatPreview = document.getElementById("maskedChatPreview");
+    const reportSection = document.getElementById("reportSection");
+    const btnDownloadCard = document.getElementById("btnDownloadCard");
+    const shareCanvas = document.getElementById("shareCanvas");
+
+    // 이벤트 리스너
+    btnLoadSample.addEventListener("click", () => {
+      rawChatInput.value = SAMPLE_CONVERSATION;
+      onChatTextChange();
+    });
+
+    rawChatInput.addEventListener("input", onChatTextChange);
+    speakerSelect.addEventListener("change", (e) => {
+      selectedSpeaker = e.target.value;
+    });
+
+    btnToggleMasked.addEventListener("click", () => {
+      if (!parsedData) {
+        parseAndMask();
+      }
+      maskedPreviewWrapper.style.display = maskedPreviewWrapper.style.display === "none" ? "block" : "none";
+    });
+
+    btnAnalyze.addEventListener("click", runAnalysis);
+
+    btnDownloadCard.addEventListener("click", () => {
+      if (!shareCanvas) return;
+      const dataUrl = shareCanvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `MBTI_자기이해_리포트_${selectedSpeaker || '화자'}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    function onChatTextChange() {
+      const text = rawChatInput.value.trim();
+      if (!text) {
+        speakerSelect.innerHTML = '<option value="">대화를 입력하거나 파싱하면 화자 목록이 나타납니다</option>';
+        return;
+      }
+      // 가벼운 사전 화자 추출
+      const speakerRegex = /\[(오전|오후)\s*\d+:\d+\]\s*([^:]+?)\s*:/g;
+      const speakers = new Set();
+      let match;
+      while ((match = speakerRegex.exec(text)) !== null) {
+        speakers.add(match[2].trim());
+      }
+
+      const current = speakerSelect.value;
+      speakerSelect.innerHTML = "";
+      if (speakers.size === 0) {
+        speakerSelect.innerHTML = '<option value="">화자를 감지할 수 없습니다</option>';
+      } else {
+        const optionDefault = document.createElement("option");
+        optionDefault.value = "";
+        optionDefault.textContent = "-- 분석 대상 화자를 선택하세요 --";
+        speakerSelect.appendChild(optionDefault);
+
+        speakers.forEach(spk => {
+          const opt = document.createElement("option");
+          opt.value = spk;
+          opt.textContent = `${spk} (선택 시 나/화자A로 치환)`;
+          if (spk === current || (speakers.size === 1 && !current)) {
+            opt.selected = true;
+          }
+          speakerSelect.appendChild(opt);
+        });
+      }
+    }
+
+    // 파싱 및 개인정보 마스킹 함수
+    function parseAndMask() {
+      const text = rawChatInput.value;
+      if (!text.trim()) return null;
+
+      const lines = text.split(/\r?\n/);
+      const messages = [];
+      let currentDate = "알 수 없는 날짜";
+      const speakerSet = new Set();
+
+      const dateRegex = /^-+\s*(\d{4}년\s*\d{1,2}월\s*\d{1,2}일(?:\s*[가-힣]+요일)?)\s*-+/;
+      const msgRegex = /^\[(오전|오후)\s*(\d{1,2}):(\d{2})\]\s*([^:]+?)\s*:\s*(.*)/;
+
+      let lastMsg = null;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        // 날짜선 검사
+        const dateMatch = line.match(dateRegex);
+        if (dateMatch) {
+          currentDate = dateMatch[1];
+          continue;
+        }
+
+        // 메시지 헤더 검사
+        const msgMatch = line.match(msgRegex);
+        if (msgMatch) {
+          const ampm = msgMatch[1];
+          let hour = parseInt(msgMatch[2], 10);
+          const minute = parseInt(msgMatch[3], 10);
+          if (ampm === "오후" && hour < 12) hour += 12;
+          if (ampm === "오전" && hour === 12) hour = 0;
+
+          const rawSpeaker = msgMatch[4].trim();
+          const content = msgMatch[5];
+          speakerSet.add(rawSpeaker);
+
+          lastMsg = {
+            date: currentDate,
+            hour: hour,
+            minute: minute,
+            timeString: `${msgMatch[1]} ${msgMatch[2]}:${msgMatch[3]}`,
+            rawSpeaker: rawSpeaker,
+            content: content
+          };
+          messages.push(lastMsg);
+        } else if (lastMsg) {
+          // 멀티라인 메시지 결합
+          lastMsg.content += "\n" + line;
+        }
+      }
+
+      // 화자 매핑 테이블 구성 (사용자 선택 화자 -> 나(화자A), 상대방 -> 화자B, 화자C ...)
+      const chosen = speakerSelect.value || (messages[0] ? messages[0].rawSpeaker : "");
+      selectedSpeaker = chosen;
+
+      const speakerMapping = {};
+      if (chosen) {
+        speakerMapping[chosen] = "나(화자A)";
+      }
+      let charCode = 66; // 'B'
+      speakerSet.forEach(spk => {
+        if (spk !== chosen) {
+          speakerMapping[spk] = `화자${String.fromCharCode(charCode)}`;
+          charCode++;
+        }
+      });
+
+      // 마스킹 정규식
+      // 전화번호 (010-XXXX-XXXX, 010XXXXXXXX, 02-XXX-XXXX 등)
+      const phoneRegex = /(01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}|0[2-6]\d?[-.\s]?\d{3,4}[-.\s]?\d{4})/g;
+      // 이메일
+      const emailRegex = /([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/g;
+      // 계좌번호 (은행명 뒤 숫자들 또는 11~14자리 숫자, 3333-01-XXXXXXX 형식)
+      const accountRegex = /((?:카카오뱅크|국민은행|신한은행|우리은행|하나은행|농협|기업은행|토스뱅크)\s*)?(\b\d{2,4}[- ]\d{2,6}[- ]\d{3,8}\b|\b\d{11,14}\b)/g;
+
+      const maskedMessages = messages.map(m => {
+        let maskedContent = m.content;
+        maskedContent = maskedContent.replace(phoneRegex, "[전화번호 마스킹]");
+        maskedContent = maskedContent.replace(emailRegex, "[이메일 마스킹]");
+        maskedContent = maskedContent.replace(accountRegex, (match, bank, num) => {
+          return (bank ? bank : "") + "[계좌번호 마스킹]";
+        });
+
+        const maskedSpeaker = speakerMapping[m.rawSpeaker] || m.rawSpeaker;
+
+        return {
+          ...m,
+          maskedSpeaker: maskedSpeaker,
+          maskedContent: maskedContent,
+          isTarget: m.rawSpeaker === chosen
+        };
+      });
+
+      // 마스킹된 대화 텍스트 생성
+      const maskedTextLines = [];
+      let lastDate = "";
+      maskedMessages.forEach(m => {
+        if (m.date !== lastDate) {
+          maskedTextLines.push(`--------------- ${m.date} ---------------`);
+          lastDate = m.date;
+        }
+        maskedTextLines.push(`[${m.timeString}] ${m.maskedSpeaker} : ${m.maskedContent}`);
+      });
+
+      maskedChatPreview.textContent = maskedTextLines.join("\n");
+
+      parsedData = {
+        messages: maskedMessages,
+        speakers: Array.from(speakerSet),
+        speakerMapping: speakerMapping,
+        targetSpeaker: chosen
+      };
+
+      return parsedData;
+    }
+
+    // 정량 지표 계산기
+    function calculateMetrics(messages, targetSpeaker) {
+      const targetMsgs = messages.filter(m => m.rawSpeaker === targetSpeaker);
+      const totalCount = targetMsgs.length;
+      if (totalCount === 0) {
+        return {
+          count: 0,
+          avgLen: 0,
+          initiateRate: 0,
+          avgLatency: 0,
+          laughDensity: 0,
+          emojiDensity: 0
+        };
+      }
+
+      // 글자 수 및 밀도
+      let totalChars = 0;
+      let totalLaughs = 0;
+      let totalEmojis = 0;
+      const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}ㅠㅜ~^✨💡❤️🔥👍👏]/gu;
+
+      targetMsgs.forEach(m => {
+        const txt = m.content;
+        totalChars += txt.length;
+        const laughs = (txt.match(/[ㅋㅎ하호]/g) || []).length;
+        totalLaughs += laughs;
+        const emojis = (txt.match(emojiRegex) || []).length;
+        totalEmojis += emojis;
+      });
+
+      const avgLen = Math.round(totalChars / totalCount);
+      const laughDensity = totalChars > 0 ? ((totalLaughs / totalChars) * 100).toFixed(1) : 0;
+      const emojiDensity = totalChars > 0 ? ((totalEmojis / totalChars) * 100).toFixed(1) : 0;
+
+      // 대화 개시율: 날짜별 첫 발화자, 혹은 이전 메시지와 1시간 이상 차이 날 때 첫 발화한 비율
+      let sessionStarts = 0;
+      let targetInitiations = 0;
+      let prevMsg = null;
+
+      messages.forEach(m => {
+        let isNewSession = false;
+        if (!prevMsg || prevMsg.date !== m.date) {
+          isNewSession = true;
+        } else {
+          const diffMinutes = (m.hour * 60 + m.minute) - (prevMsg.hour * 60 + prevMsg.minute);
+          if (diffMinutes >= 60) isNewSession = true;
+        }
+
+        if (isNewSession) {
+          sessionStarts++;
+          if (m.rawSpeaker === targetSpeaker) {
+            targetInitiations++;
+          }
+        }
+        prevMsg = m;
+      });
+
+      const initiateRate = sessionStarts > 0 ? Math.round((targetInitiations / sessionStarts) * 100) : 0;
+
+      // 평균 응답 지연 (상대방 발화 직후 target이 발화하기까지의 평균 분)
+      let totalDelayMinutes = 0;
+      let delayCount = 0;
+      for (let i = 1; i < messages.length; i++) {
+        const curr = messages[i];
+        const prev = messages[i - 1];
+        if (curr.rawSpeaker === targetSpeaker && prev.rawSpeaker !== targetSpeaker && curr.date === prev.date) {
+          const delay = (curr.hour * 60 + curr.minute) - (prev.hour * 60 + prev.minute);
+          if (delay >= 0 && delay < 120) {
+            totalDelayMinutes += delay;
+            delayCount++;
+          }
+        }
+      }
+      const avgLatency = delayCount > 0 ? Math.round(totalDelayMinutes / delayCount) : 2;
+
+      return {
+        count: totalCount,
+        avgLen,
+        initiateRate,
+        avgLatency,
+        laughDensity,
+        emojiDensity
+      };
+    }
+
+    // 4축 스코어러 및 원문 인용 발췌기
+    function scoreMBTI(targetMsgs, metrics) {
+      const scores = {
+        E: 0, I: 0,
+        S: 0, N: 0,
+        T: 0, F: 0,
+        J: 0, P: 0
+      };
+
+      const quotesByPole = {
+        E: [], I: [],
+        S: [], N: [],
+        T: [], F: [],
+        J: [], P: []
+      };
+
+      // 문장 분리 후 키워드 탐색
+      targetMsgs.forEach(m => {
+        const sentences = m.maskedContent.split(/(?<=[.?!~])\s+|\n+/);
+        sentences.forEach(st => {
+          const s = st.trim();
+          if (s.length < 2) return;
+
+          Object.keys(DICTIONARY).forEach(pole => {
+            const keywords = DICTIONARY[pole];
+            let hits = [];
+            keywords.forEach(kw => {
+              if (s.includes(kw)) {
+                hits.push(kw);
+              }
+            });
+
+            if (hits.length > 0) {
+              const weight = hits.length;
+              scores[pole] += weight;
+              quotesByPole[pole].push({
+                sentence: s,
+                hits: hits,
+                weight: weight
+              });
+            }
+          });
+        });
+      });
+
+      // 정량 지표 가중치 반영
+      // E/I: 개시율 높고 발화량 많으면 E 보정, 적고 짧으면 I 보정
+      if (metrics.initiateRate >= 50) scores.E += 2;
+      else scores.I += 1;
+      if (metrics.laughDensity > 1.5) scores.E += 1;
+
+      // T/F: 이모지/웃음 밀도가 높으면 F 보정, 낮고 객관적 어투면 T 보정
+      if (metrics.emojiDensity > 2.0 || metrics.laughDensity > 3.0) scores.F += 2;
+      else scores.T += 1;
+
+      // J/P: 응답 지연이 짧고 계획적이면 J 보정, 길거나 유연하면 P 보정
+      if (metrics.avgLatency <= 3) scores.J += 1;
+      else scores.P += 1;
+
+      // 축별 비율 및 판정
+      function calcAxis(leftKey, rightKey, totalEvidenceNeeded = 1) {
+        const leftScore = scores[leftKey];
+        const rightScore = scores[rightKey];
+        const total = leftScore + rightScore;
+
+        let leftRatio = 50;
+        let rightRatio = 50;
+        let dominant = leftKey;
+        let isLack = false;
+
+        if (total === 0 || targetMsgs.length < 2) {
+          isLack = true;
+          dominant = leftKey; // 기본
+        } else {
+          leftRatio = Math.round((leftScore / total) * 100);
+          rightRatio = 100 - leftRatio;
+          dominant = leftRatio >= rightRatio ? leftKey : rightKey;
+        }
+
+        // 신뢰도 계산
+        let confidence = Math.min(95, Math.max(30, total * 22 + targetMsgs.length * 5));
+        if (isLack || total < totalEvidenceNeeded) {
+          confidence = 25;
+        }
+
+        // 베스트 인용문 선정
+        const domQuotes = quotesByPole[dominant].sort((a, b) => b.weight - a.weight);
+        const bestQuote = domQuotes.length > 0 ? domQuotes[0] : null;
+
+        return {
+          leftKey,
+          rightKey,
+          leftScore,
+          rightScore,
+          leftRatio,
+          rightRatio,
+          dominant,
+          isLack,
+          confidence,
+          bestQuote
+        };
+      }
+
+      const axisEI = calcAxis("E", "I", 1);
+      const axisSN = calcAxis("S", "N", 1);
+      const axisTF = calcAxis("T", "F", 1);
+      const axisJP = calcAxis("J", "P", 1);
+
+      // 전체 MBTI 조합
+      let mbtiType = `${axisEI.dominant}${axisSN.dominant}${axisTF.dominant}${axisJP.dominant}`;
+      const isAnyLack = axisEI.isLack || axisSN.isLack || axisTF.isLack || axisJP.isLack || targetMsgs.length < 2;
+
+      return {
+        mbtiType: isAnyLack ? "근거 부족" : mbtiType,
+        rawType: mbtiType,
+        isLack: isAnyLack,
+        axisEI,
+        axisSN,
+        axisTF,
+        axisJP,
+        scores
+      };
+    }
+
+    // 분석 실행
+    function runAnalysis() {
+      const parsed = parseAndMask();
+      if (!parsed || parsed.messages.length === 0) {
+        alert("카카오톡 대화를 먼저 입력해주세요.");
+        return;
+      }
+
+      const targetSpeaker = selectedSpeaker || parsed.speakers[0];
+      const targetMsgs = parsed.messages.filter(m => m.rawSpeaker === targetSpeaker);
+
+      if (targetMsgs.length === 0) {
+        alert("선택된 화자의 메시지가 없습니다.");
+        return;
+      }
+
+      const metrics = calculateMetrics(parsed.messages, targetSpeaker);
+      const mbti = scoreMBTI(targetMsgs, metrics);
+
+      // UI 렌더링
+      reportSection.style.display = "block";
+
+      // 1. 헤더
+      const mbtiTypeDisplay = document.getElementById("mbtiTypeDisplay");
+      const mbtiPersonaDisplay = document.getElementById("mbtiPersonaDisplay");
+      const mbtiTargetDisplay = document.getElementById("mbtiTargetDisplay");
+
+      mbtiTypeDisplay.textContent = mbti.mbtiType;
+      if (mbti.isLack) {
+        mbtiTypeDisplay.style.color = "var(--danger)";
+        mbtiPersonaDisplay.textContent = "대화량 또는 판정 근거 부족 (추가 대화 필요)";
+      } else {
+        mbtiTypeDisplay.style.color = "var(--primary)";
+        mbtiPersonaDisplay.textContent = PERSONA_MAP[mbti.rawType] || "자유로운 탐구자";
+      }
+      mbtiTargetDisplay.textContent = `분석 대상: ${parsed.speakerMapping[targetSpeaker] || targetSpeaker} (${targetSpeaker}) | 총 ${metrics.count}개 발화 분석`;
+
+      // 2. 정량 지표
+      document.getElementById("metricMsgCount").textContent = `${metrics.count}개`;
+      document.getElementById("metricAvgLen").textContent = `${metrics.avgLen}자`;
+      document.getElementById("metricInitiateRate").textContent = `${metrics.initiateRate}%`;
+      document.getElementById("metricAvgLatency").textContent = `${metrics.avgLatency}분`;
+      document.getElementById("metricLaughDensity").textContent = `${metrics.laughDensity}%`;
+      document.getElementById("metricEmojiDensity").textContent = `${metrics.emojiDensity}%`;
+
+      // 3. 4축 바
+      function renderAxisUI(axisData, valLeftId, valRightId, barLeftId, barRightId, evidenceId, statusId, labelLeft, labelRight, desc) {
+        document.getElementById(valLeftId).textContent = `${axisData.leftRatio}%`;
+        document.getElementById(valRightId).textContent = `${axisData.rightRatio}%`;
+        document.getElementById(barLeftId).style.width = `${axisData.leftRatio}%`;
+        document.getElementById(barRightId).style.width = `${axisData.rightRatio}%`;
+
+        const stEl = document.getElementById(statusId);
+        if (axisData.isLack) {
+          stEl.className = "status-badge status-lack";
+          stEl.textContent = "근거 부족";
+          document.getElementById(evidenceId).textContent = `${desc} (키워드 매칭 근거 부족)`;
+        } else {
+          stEl.className = "status-badge status-ok";
+          stEl.textContent = `신뢰도 ${axisData.confidence}%`;
+          document.getElementById(evidenceId).textContent = `${desc} (${axisData.dominant} 성향 우세)`;
+        }
+      }
+
+      renderAxisUI(mbti.axisEI, "valE", "valI", "barE", "barI", "evidenceE", "statusE", "외향(E)", "내향(I)", "활동·에너지 방향");
+      renderAxisUI(mbti.axisSN, "valS", "valN", "barS", "barN", "evidenceS", "statusS", "감각(S)", "직관(N)", "정보 수집 및 인식");
+      renderAxisUI(mbti.axisTF, "valT", "valF", "barT", "barF", "evidenceT", "statusT", "사고(T)", "감정(F)", "판단 및 의사결정");
+      renderAxisUI(mbti.axisJP, "valJ", "valP", "barJ", "barP", "evidenceJ", "statusJ", "판단(J)", "인식(P)", "생활 양식 및 행동");
+
+      const overallBadge = document.getElementById("overallConfidenceBadge");
+      if (mbti.isLack) {
+        overallBadge.className = "status-badge status-lack";
+        overallBadge.textContent = "근거 부족 (대화 추가 필요)";
+      } else {
+        overallBadge.className = "status-badge status-ok";
+        overallBadge.textContent = "분석 신뢰도 양호";
+      }
+
+      // 4. 원문 근거 인용 카드
+      const quoteGrid = document.getElementById("quoteCardsGrid");
+      quoteGrid.innerHTML = "";
+
+      const axes = [
+        { data: mbti.axisEI, title: "에너지 방향 (E / I)" },
+        { data: mbti.axisSN, title: "정보 인식 (S / N)" },
+        { data: mbti.axisTF, title: "의사 결정 (T / F)" },
+        { data: mbti.axisJP, title: "행동 방식 (J / P)" }
+      ];
+
+      axes.forEach(ax => {
+        const card = document.createElement("div");
+        card.className = "quote-card";
+
+        const tag = document.createElement("div");
+        tag.className = "quote-axis-tag";
+        tag.innerHTML = `<span>${ax.title}</span> <span>${ax.data.isLack ? '<span style=\"color:var(--danger)\">근거 부족</span>' : '기여 성향: ' + ax.data.dominant}</span>`;
+        card.appendChild(tag);
+
+        const quoteBox = document.createElement("div");
+        quoteBox.className = "quote-text";
+
+        if (ax.data.bestQuote) {
+          let highlighted = escapeHtml(ax.data.bestQuote.sentence);
+          ax.data.bestQuote.hits.forEach(hit => {
+            const hitRegex = new RegExp(escapeRegex(hit), "g");
+            highlighted = highlighted.replace(hitRegex, `<span class="highlight">${hit}</span>`);
+          });
+          quoteBox.innerHTML = `“${highlighted}”`;
+        } else {
+          quoteBox.textContent = "“해당 성향을 뒷받침할 뚜렷한 키워드가 발화에서 포착되지 않았습니다.”";
+        }
+        card.appendChild(quoteBox);
+
+        const reason = document.createElement("div");
+        reason.className = "quote-reason";
+        if (ax.data.bestQuote) {
+          reason.innerHTML = `📌 <strong>매칭 단어:</strong> ${ax.data.bestQuote.hits.join(", ")} | <strong>판정 근거:</strong> ${ax.data.dominant} 성향 뉘앙스 검출`;
+        } else {
+          reason.textContent = "📌 근거 부족: 기본 중립 비율(50:50)로 산출됨";
+        }
+        card.appendChild(reason);
+
+        quoteGrid.appendChild(card);
+      });
+
+      // 5. Canvas 공유 카드 렌더링
+      drawShareCard(mbti, metrics, parsed.speakerMapping[targetSpeaker] || targetSpeaker);
+
+      // 스크롤 이동
+      reportSection.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Canvas 공유 카드 그리기
+    function drawShareCard(mbti, metrics, speakerLabel) {
+      const ctx = shareCanvas.getContext("2d");
+      const W = shareCanvas.width;  // 800
+      const H = shareCanvas.height; // 960
+
+      // 배경 그라데이션
+      const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+      bgGrad.addColorStop(0, "#F8FAFC");
+      bgGrad.addColorStop(1, "#EEF2FF");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // 외곽 테두리
+      ctx.strokeStyle = "#C7D2FE";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(16, 16, W - 32, H - 32);
+
+      // 상단 헤더 배너
+      ctx.fillStyle = "#4F46E5";
+      ctx.beginPath();
+      ctx.roundRect(40, 40, W - 80, 80, 16);
+      ctx.fill();
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 26px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("카카오톡 대화 기반 MBTI 자기이해 카드", W / 2, 88);
+
+      // 분석 대상 및 비전송 안심 마크
+      ctx.fillStyle = "#64748B";
+      ctx.font = "16px sans-serif";
+      ctx.fillText(`분석 대상 화자: ${speakerLabel}  |  브라우저 내 클라이언트 전용(비전송) 안심 분석`, W / 2, 150);
+
+      // MBTI 결과 중앙 박스
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.roundRect(80, 175, W - 160, 170, 20);
+      ctx.fill();
+      ctx.strokeStyle = "#E2E8F0";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = mbti.isLack ? "#EF4444" : "#4F46E5";
+      ctx.font = "bold 64px sans-serif";
+      ctx.fillText(mbti.mbtiType, W / 2, 255);
+
+      ctx.fillStyle = "#1E1B4B";
+      ctx.font = "bold 22px sans-serif";
+      const personaText = mbti.isLack ? "판정 근거 부족 (추가 대화 필요)" : (PERSONA_MAP[mbti.rawType] || "자유로운 탐구자");
+      ctx.fillText(personaText, W / 2, 305);
+
+      // 4축 비율 게이지 바
+      const axesList = [
+        { labelL: "외향 E", labelR: "내향 I", rL: mbti.axisEI.leftRatio, rR: mbti.axisEI.rightRatio },
+        { labelL: "감각 S", labelR: "직관 N", rL: mbti.axisSN.leftRatio, rR: mbti.axisSN.rightRatio },
+        { labelL: "사고 T", labelR: "감정 F", rL: mbti.axisTF.leftRatio, rR: mbti.axisTF.rightRatio },
+        { labelL: "판단 J", labelR: "인식 P", rL: mbti.axisJP.leftRatio, rR: mbti.axisJP.rightRatio }
+      ];
+
+      let barStartY = 380;
+      axesList.forEach((ax, idx) => {
+        const y = barStartY + (idx * 55);
+
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillStyle = "#334155";
+        ctx.textAlign = "left";
+        ctx.fillText(`${ax.labelL} ${ax.rL}%`, 90, y);
+
+        ctx.textAlign = "right";
+        ctx.fillText(`${ax.rR}% ${ax.labelR}`, W - 90, y);
+
+        // 바 배경
+        ctx.fillStyle = "#E2E8F0";
+        ctx.beginPath();
+        ctx.roundRect(90, y + 8, W - 180, 16, 8);
+        ctx.fill();
+
+        // 좌측 바
+        const leftWidth = ((W - 180) * ax.rL) / 100;
+        ctx.fillStyle = "#4F46E5";
+        ctx.beginPath();
+        ctx.roundRect(90, y + 8, leftWidth, 16, [8, 0, 0, 8]);
+        ctx.fill();
+      });
+
+      // 정량 지표 요약
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.roundRect(80, 620, W - 160, 100, 14);
+      ctx.fill();
+      ctx.strokeStyle = "#E2E8F0";
+      ctx.stroke();
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#0F172A";
+      ctx.font = "bold 17px sans-serif";
+      ctx.fillText(`발화 수: ${metrics.count}개  |  평균 글자: ${metrics.avgLen}자  |  개시율: ${metrics.initiateRate}%`, W / 2, 660);
+      ctx.fillStyle = "#64748B";
+      ctx.font = "15px sans-serif";
+      ctx.fillText(`응답 지연: ${metrics.avgLatency}분  |  웃음(ㅋ/ㅎ): ${metrics.laughDensity}%  |  이모지: ${metrics.emojiDensity}%`, W / 2, 695);
+
+      // 대표 발화 인용문 (첫번째 유효 인용구)
+      let featuredQuote = "“사람들과 따뜻하게 공감하며 즐거운 시너지를 냅니다.”";
+      const sampleQuotes = [mbti.axisEI.bestQuote, mbti.axisTF.bestQuote, mbti.axisSN.bestQuote, mbti.axisJP.bestQuote];
+      for (const q of sampleQuotes) {
+        if (q && q.sentence) {
+          featuredQuote = `“${q.sentence.replace(/\n/g, ' ')}”`;
+          break;
+        }
+      }
+
+      ctx.fillStyle = "#334155";
+      ctx.font = "italic 16px sans-serif";
+      if (featuredQuote.length > 45) {
+        featuredQuote = featuredQuote.substring(0, 43) + "…”";
+      }
+      ctx.fillText(featuredQuote, W / 2, 770);
+
+      // 하단 카피라이트 및 비진단 안내
+      ctx.fillStyle = "#94A3B8";
+      ctx.font = "13px sans-serif";
+      ctx.fillText("본 리포트는 의료·진단 목적이 아닌 대화 습관 기반 자기이해 리포트입니다.", W / 2, 870);
+      ctx.fillText("No-Server Client-side Masking & Analysis Engine v1", W / 2, 895);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function escapeRegex(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // 초기 상태에서 샘플 대화 자동 준비
+    onChatTextChange();
+  </script>
+</body>
+</html>
