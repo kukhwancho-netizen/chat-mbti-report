@@ -498,9 +498,15 @@
     <section class="card">
       <div class="card-title">
         <span>💬 카카오톡 대화 입력</span>
-        <button id="btnLoadSample" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
-          📄 샘플 대화 불러오기
-        </button>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <label for="chatFileInput" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+            📁 파일 업로드 (.txt)
+          </label>
+          <input type="file" id="chatFileInput" accept=".txt" style="display: none;">
+          <button id="btnLoadSample" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
+            📄 샘플 대화 불러오기
+          </button>
+        </div>
       </div>
       <textarea id="rawChatInput" placeholder="카카오톡 PC 내보내기 텍스트를 이곳에 붙여넣으세요...&#10;형식 예시:&#10;--------------- 2026년 11월 14일 토요일 ---------------&#10;[오전 10:15] 화자A : 안녕하세요! 이번 주말 일정 체크해봐요."></textarea>
       
@@ -675,6 +681,67 @@
           <canvas id="shareCanvas" width="800" height="960"></canvas>
         </div>
       </section>
+
+      <!-- 500원 유료 페이월: MBTI+사주 종합 결과 보기 -->
+      <section class="card" id="premiumSection">
+        <div class="card-title">
+          <span>🔮 MBTI+사주 종합 결과 보기</span>
+          <span class="badge-pill" style="margin: 0; background-color: #FEF3C7; color: #92400E; font-size: 0.8rem;">500원 프리미엄</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          무료 기본 리포트 외에 나(화자A)의 4축 성향 심층 해석, 관계 소통 전략 및 차세대 사주·TCI 융합 v2 종합 안내를 제공합니다.
+        </p>
+
+        <!-- 잠금 상태 UI (블러 및 자물쇠 오버레이) -->
+        <div id="paywallLockedView" style="position: relative; border-radius: 12px; border: 1px solid var(--border); padding: 36px 20px; text-align: center; background: linear-gradient(180deg, #F8FAFC 0%, #EEF2FF 100%);">
+          <div style="font-size: 3rem; margin-bottom: 10px;">🔒</div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #1E1B4B; margin-bottom: 8px;">
+            MBTI+사주 종합 결과 보기가 잠겨 있습니다
+          </h3>
+          <p style="font-size: 0.88rem; color: #475569; max-width: 520px; margin: 0 auto 16px; line-height: 1.5;">
+            500원 결제 시 24시간 동안 나(화자A)의 축별 심층 해석 및 소통·갈등 관리 전략과 사주·TCI 융합 분석 안내를 자유롭게 열람하실 수 있습니다.
+          </p>
+          <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <span id="paywallDemoBadge" class="badge-pill" style="margin: 0; background-color: #DBEAFE; color: #1E40AF; font-size: 0.8rem;">
+              데모 모드 (토스페이먼츠 연동 준비)
+            </span>
+          </div>
+          <div>
+            <button id="btnUnlockPaywall" class="btn-primary" style="font-size: 0.95rem; padding: 12px 24px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
+              🔓 500원 결제하고 종합 결과 보기
+            </button>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px;">
+            🔒 실명 및 개인정보(PII)는 유료 종합 결과에도 100% 동일한 비전송·마스킹 원칙이 적용됩니다.
+          </div>
+        </div>
+
+        <!-- 잠금 해제 상태 UI -->
+        <div id="paywallUnlockedView" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 10px 14px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px;">
+            <div style="font-size: 0.85rem; color: #065F46; font-weight: 600;">
+              ✓ 500원 종합 결과 잠금 해제 완료 (24시간 유효 열람권 활성화)
+            </div>
+            <span id="paywallExpiryNotice" style="font-size: 0.75rem; color: #047857;"></span>
+          </div>
+
+          <!-- 심층 MBTI 소통 전략 박스 -->
+          <div id="deepMbtiAnalysisBox" style="margin-bottom: 20px;">
+            <!-- 동적으로 렌더링 -->
+          </div>
+
+          <!-- 사주·TCI 융합 v2 종합 안내 박스 -->
+          <div style="background: #FDF4FF; border: 1px solid #F0ABFC; border-radius: 10px; padding: 18px 20px;">
+            <h4 style="font-size: 1rem; font-weight: 800; color: #86198F; margin-bottom: 6px;">
+              🔮 사주·TCI 융합 v2 종합 결과 연계 안내
+            </h4>
+            <p style="font-size: 0.85rem; color: #701A75; line-height: 1.6;">
+              본 종합 결과는 차기 v2 만세력(생년월일시 기준 오행 분포 및 십성 명식)과 TCI 심리검사(기질 4차원·성격 3차원) 모듈이 탑재되는 즉시 추가 과금 없이 자동 크로스 융합 분석으로 업그레이드 연동됩니다.
+              나(화자A)의 일상 대화 습관이 사주 8자의 잠재 기운과 어떻게 상호작용하는지 입체적으로 규명할 예정입니다.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- v2 확장 사주·TCI 융합 분석 티저 -->
@@ -758,8 +825,16 @@
     let parsedData = null;
     let selectedSpeaker = "";
 
+    // 토스페이먼츠 연동 placeholder 및 페이월 상수
+    // tosspayments 키가 비어 있으면 '데모 모드'로 즉시 잠금 해제 지원
+    const TOSS_PAYMENTS_CLIENT_KEY = "";
+    const PAYWALL_PRICE = 500;
+    const STORAGE_PAYWALL_TOKEN_KEY = "mbti_chat_report_paywall_token";
+    const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24시간 유효
+
     // DOM 요소
     const rawChatInput = document.getElementById("rawChatInput");
+    const chatFileInput = document.getElementById("chatFileInput");
     const btnLoadSample = document.getElementById("btnLoadSample");
     const speakerSelect = document.getElementById("speakerSelect");
     const btnAnalyze = document.getElementById("btnAnalyze");
@@ -769,8 +844,25 @@
     const reportSection = document.getElementById("reportSection");
     const btnDownloadCard = document.getElementById("btnDownloadCard");
     const shareCanvas = document.getElementById("shareCanvas");
+    const btnUnlockPaywall = document.getElementById("btnUnlockPaywall");
+    const paywallLockedView = document.getElementById("paywallLockedView");
+    const paywallUnlockedView = document.getElementById("paywallUnlockedView");
+    const paywallDemoBadge = document.getElementById("paywallDemoBadge");
+    const paywallExpiryNotice = document.getElementById("paywallExpiryNotice");
+    const deepMbtiAnalysisBox = document.getElementById("deepMbtiAnalysisBox");
 
-    // 개인정보(PII) 마스킹 함수 (P1-3)
+    // 날짜 패턴 판별 헬퍼 (YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD, YYYY년 M월 D일)
+    function isDatePattern(str) {
+      if (!str) return false;
+      const s = str.trim();
+      // YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD, YYYY. MM. DD
+      if (/^\d{4}\s*[-./]\s*\d{1,2}\s*[-./]\s*\d{1,2}$/.test(s)) return true;
+      // YYYY년 M월 D일 (공백 허용)
+      if (/^\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일?$/.test(s)) return true;
+      return false;
+    }
+
+    // 개인정보(PII) 마스킹 함수 (P1-3, P2 수정: 날짜 패턴 오탐 방지)
     function maskPII(text) {
       if (!text) return "";
       let masked = text;
@@ -792,42 +884,94 @@
       const emailRegex = /[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g;
       masked = masked.replace(emailRegex, "[이메일 마스킹]");
 
-      // 3. 계좌번호 마스킹
+      // 3. 계좌번호 마스킹 (날짜 패턴 오탐 방지)
       const bankPrefix = "(?:카카오뱅크|국민은행|국민|신한은행|신한|우리은행|우리|하나은행|하나|농협|기업은행|기업|토스뱅크|토스|케이뱅크|SC제일|씨티|우체국|새마을금고|신협|수협)";
       const contextKeywords = "(?:계좌번호|계좌|입금계좌|입금|송금|무통장|회비|후원|환불|번호)";
 
-      // 은행명 또는 문맥 키워드 뒤 계좌번호 (하이픈 없는 8~14자리 또는 구분자 포함)
+      // 은행명 또는 문맥 키워드 뒤 계좌번호 (날짜 패턴이면 보존)
       const bankOrKeywordRegex = new RegExp("(" + bankPrefix + "|" + contextKeywords + ")(\\s*[:：]?\\s*)(\\b\\d{1,6}[-. /]\\d{1,6}[-. /]\\d{2,8}(?:[-. /]\\d{1,8})*\\b|\\b\\d{8,14}\\b)(?![년월일시분원])", "g");
       masked = masked.replace(bankOrKeywordRegex, (match, prefix, sep, num) => {
+        if (isDatePattern(num)) return match;
         return prefix + sep + "[계좌번호 마스킹]";
       });
 
       // 번호 뒤 문맥 키워드 (예: 1234567890로 입금)
       const succeedKeywordRegex = new RegExp("(\\b\\d{8,14}\\b)(\\s*(?:로\\s*)?)(" + contextKeywords + ")", "g");
       masked = masked.replace(succeedKeywordRegex, (match, num, sep, keyword) => {
+        if (isDatePattern(num)) return match;
         return "[계좌번호 마스킹]" + sep + keyword;
       });
 
-      // 점(.) / 슬래시(/) / 하이픈(-) 구분 계좌번호 (3개 이상 세그먼트, 예: 1234.56.7890123, 123-45-678901, 3333-01-2345678, 123/45/678901)
+      // 점(.) / 슬래시(/) / 하이픈(-) 구분 계좌번호 (3개 이상 세그먼트)
       const formattedAccountRegex = /\b\d{2,6}[-.\/]\d{1,6}[-.\/]\d{3,8}(?:[-.\/]\d{1,8})*\b(?![년월일시분원])/g;
       masked = masked.replace(formattedAccountRegex, (match) => {
-        if (/^\d{4}[-.\/]\d{1,2}[-.\/]\d{1,2}$/.test(match.trim())) return match;
+        if (isDatePattern(match)) return match;
         return "[계좌번호 마스킹]";
       });
 
       // 메시지 내 은행명 또는 계좌 문맥이 있는 경우 잔여 8~14자리 숫자 마스킹
       const hasAccountContext = new RegExp("(" + bankPrefix + "|" + contextKeywords + ")").test(masked);
       if (hasAccountContext) {
-        masked = masked.replace(/\b\d{8,14}\b(?![년월일시분원])/g, "[계좌번호 마스킹]");
+        masked = masked.replace(/\b\d{8,14}\b(?![년월일시분원])/g, (num) => {
+          if (isDatePattern(num)) return num;
+          return "[계좌번호 마스킹]";
+        });
       }
 
       // 단독 10~14자리 연속 숫자 (경계 케이스 우선 마스킹)
-      masked = masked.replace(/\b\d{10,14}\b(?![년월일시분원])/g, "[계좌번호 마스킹]");
+      masked = masked.replace(/\b\d{10,14}\b(?![년월일시분원])/g, (num) => {
+        if (isDatePattern(num)) return num;
+        return "[계좌번호 마스킹]";
+      });
 
       return masked;
     }
 
-    // 파싱 및 마스킹 순수 함수 (P1-2, P2-4, P2-5)
+    // 메시지 헤더 분리 순수 함수 (P2 수정: 첫 ' : '(공백-콜론-공백) 기준 우선, 없으면 마지막 콜론 폴백)
+    function splitHeaderAndContent(line) {
+      if (!line) return null;
+      const timeMatch = line.match(/^\[(오전|오후)\s*(\d{1,2}):(\d{2})\]\s*(.*)$/);
+      if (!timeMatch) return null;
+
+      const ampm = timeMatch[1];
+      let hour = parseInt(timeMatch[2], 10);
+      const minute = parseInt(timeMatch[3], 10);
+      if (ampm === "오후" && hour < 12) hour += 12;
+      if (ampm === "오전" && hour === 12) hour = 0;
+
+      const rest = timeMatch[4];
+      let rawSpeaker = "";
+      let content = "";
+
+      // 첫 ' : '(공백-콜론-공백) 기준 우선, 없으면 마지막 콜론 폴백
+      const firstSpacedColon = rest.indexOf(" : ");
+      if (firstSpacedColon !== -1) {
+        rawSpeaker = rest.substring(0, firstSpacedColon).trim();
+        content = rest.substring(firstSpacedColon + 3);
+      } else {
+        const lastColon = rest.lastIndexOf(":");
+        if (lastColon !== -1) {
+          rawSpeaker = rest.substring(0, lastColon).trim();
+          content = rest.substring(lastColon + 1).trim();
+        } else {
+          rawSpeaker = rest.trim();
+          content = "";
+        }
+      }
+
+      return {
+        ampm,
+        hourRaw: timeMatch[2],
+        minuteRaw: timeMatch[3],
+        hour,
+        minute,
+        timeString: `${ampm} ${timeMatch[2]}:${timeMatch[3]}`,
+        rawSpeaker,
+        content
+      };
+    }
+
+    // 파싱 및 마스킹 순수 함수 (P1-2, P2-4, P2-5, P2 헤더분리)
     function parseChatText(text, chosenSpeaker = "") {
       if (!text || !text.trim()) return null;
 
@@ -838,12 +982,8 @@
       let prevMinutes = -1;
       const speakerSet = new Set();
 
-      // 날짜 구분선: '---' 다수(3개 이상) + 연/월/일 포함 라인이면 새 날짜로 인정 (P2-4)
+      // 날짜 구분선: '---' 다수(3개 이상) + 연/월/일 포함 라인이면 새 날짜로 인정
       const dateRegex = /-{3,}.*?(\d{4}\s*[년./-]\s*\d{1,2}\s*[월./-]\s*\d{1,2}\s*일?(?:\s*[가-힣]+요일)?)/;
-
-      // 메시지 헤더: [오전/오후 H:MM] 화자 : 내용
-      // 화자명에 콜론이 포함될 수 있도록 마지막 콜론 기준으로 화자와 본문 분리 (P2-5)
-      const msgRegex = /^\[(오전|오후)\s*(\d{1,2}):(\d{2})\]\s*(.+)\s*:\s*(.*)/;
 
       let lastMsg = null;
 
@@ -859,34 +999,25 @@
           continue;
         }
 
-        const msgMatch = line.match(msgRegex);
-        if (msgMatch) {
-          const ampm = msgMatch[1];
-          let hour = parseInt(msgMatch[2], 10);
-          const minute = parseInt(msgMatch[3], 10);
-          if (ampm === "오후" && hour < 12) hour += 12;
-          if (ampm === "오전" && hour === 12) hour = 0;
-
-          const currentMinutes = hour * 60 + minute;
+        const msgHeader = splitHeaderAndContent(line);
+        if (msgHeader) {
+          const currentMinutes = msgHeader.hour * 60 + msgHeader.minute;
           // 시간 흐름 역행 감지 시 가상 일자 증가로 세션 및 지연 왜곡 방지 (P2-4)
           if (prevMinutes >= 0 && currentMinutes < prevMinutes) {
             implicitDayOffset++;
           }
           prevMinutes = currentMinutes;
 
-          const rawSpeaker = msgMatch[4].trim();
-          const content = msgMatch[5];
-          speakerSet.add(rawSpeaker);
-
+          speakerSet.add(msgHeader.rawSpeaker);
           const effectiveDate = implicitDayOffset > 0 ? `${currentDate} (+${implicitDayOffset}일)` : currentDate;
 
           lastMsg = {
             date: effectiveDate,
-            hour: hour,
-            minute: minute,
-            timeString: `${msgMatch[1]} ${msgMatch[2]}:${msgMatch[3]}`,
-            rawSpeaker: rawSpeaker,
-            rawContent: content
+            hour: msgHeader.hour,
+            minute: msgHeader.minute,
+            timeString: msgHeader.timeString,
+            rawSpeaker: msgHeader.rawSpeaker,
+            rawContent: msgHeader.content
           };
           messages.push(lastMsg);
         } else if (lastMsg) {
@@ -931,7 +1062,7 @@
       };
     }
 
-    // 정량 지표 계산기 (P2-6)
+    // 정량 지표 계산기 (P2 수정: 유효 교대(회신 쌍) 0건 시 근거 부족 처리)
     function calculateMetrics(messages) {
       const targetMsgs = messages.filter(m => m.isTarget);
       const totalCount = targetMsgs.length;
@@ -946,7 +1077,9 @@
           avgLatency: null,
           avgLatencyDisplay: "근거 부족",
           laughDensity: 0,
-          emojiDensity: 0
+          emojiDensity: 0,
+          partnerFollowCount: 0,
+          delayCount: 0
         };
       }
 
@@ -968,7 +1101,7 @@
       const laughDensity = totalChars > 0 ? ((totalLaughs / totalChars) * 100).toFixed(1) : 0;
       const emojiDensity = totalChars > 0 ? ((totalEmojis / totalChars) * 100).toFixed(1) : 0;
 
-      // P2-6: 대화 상대 존재 여부 판정
+      // 대화 상대 존재 여부 판정
       const hasPartner = messages.some(m => !m.isTarget);
 
       // 대화 개시율 계산
@@ -994,26 +1127,34 @@
         prevMsg = m;
       });
 
-      const hasInitiateRate = hasPartner && sessionStarts > 0;
-      const initiateRate = hasInitiateRate ? Math.round((targetInitiations / sessionStarts) * 100) : null;
-      const initiateRateDisplay = hasInitiateRate ? `${initiateRate}%` : "근거 부족";
-
-      // 평균 응답 지연 계산 (상대방 발화 직후 target이 동일 날짜 120분 내 회신한 쌍)
+      // 타 화자 메시지가 뒤따르는 유효 교대(회신 쌍) 및 응답 지연 계산
       let totalDelayMinutes = 0;
       let delayCount = 0;
+      let partnerFollowCount = 0;
+
       for (let i = 1; i < messages.length; i++) {
         const curr = messages[i];
         const prev = messages[i - 1];
-        if (curr.isTarget && !prev.isTarget && curr.date === prev.date) {
+        if (curr.date === prev.date) {
           const delay = (curr.hour * 60 + curr.minute) - (prev.hour * 60 + prev.minute);
           if (delay >= 0 && delay < 120) {
-            totalDelayMinutes += delay;
-            delayCount++;
+            if (curr.isTarget && !prev.isTarget) {
+              totalDelayMinutes += delay;
+              delayCount++;
+            } else if (!curr.isTarget && prev.isTarget) {
+              partnerFollowCount++;
+            }
           }
         }
       }
 
-      const hasAvgLatency = hasPartner && delayCount > 0;
+      // 타 화자 메시지가 뒤따르는 유효 교대(회신 쌍)이 0이면 개시율·응답지연 모두 '근거 부족'
+      const hasValidExchanges = hasPartner && partnerFollowCount > 0;
+      const hasInitiateRate = hasValidExchanges && sessionStarts > 0;
+      const initiateRate = hasInitiateRate ? Math.round((targetInitiations / sessionStarts) * 100) : null;
+      const initiateRateDisplay = hasInitiateRate ? `${initiateRate}%` : "근거 부족";
+
+      const hasAvgLatency = hasValidExchanges && delayCount > 0;
       const avgLatency = hasAvgLatency ? Math.round(totalDelayMinutes / delayCount) : null;
       const avgLatencyDisplay = hasAvgLatency ? `${avgLatency}분` : "근거 부족";
 
@@ -1027,11 +1168,13 @@
         avgLatency,
         avgLatencyDisplay,
         laughDensity,
-        emojiDensity
+        emojiDensity,
+        partnerFollowCount,
+        delayCount
       };
     }
 
-    // 4축 스코어러 및 원문 인용 발췌기 (P2-6, P2-7)
+    // 4축 스코어러 및 원문 인용 발췌기 (P2 수정: 유효 교대 부재 시 가중치 배제)
     function scoreMBTI(targetMsgs, metrics) {
       const scores = {
         E: 0, I: 0,
@@ -1076,7 +1219,7 @@
         });
       });
 
-      // P2-6: 대화 상대가 없거나 회신 쌍이 없으면 개시율·응답지연을 E/J 근거로 쓰지 않음
+      // P2 수정: 타 화자 메시지가 뒤따르는 유효 교대가 없으면 개시율·응답지연을 E/J 가중치에서 배제
       if (metrics.hasInitiateRate) {
         if (metrics.initiateRate >= 50) scores.E += 2;
         else scores.I += 1;
@@ -1093,7 +1236,7 @@
         else scores.P += 1;
       }
 
-      // P2-7: 신뢰도 산식 개선 (축 내 격차 margin과 유효 근거 문장 수 반영, 임의 상한 합산 제거)
+      // 신뢰도 산식 개선 (축 내 격차 margin과 유효 근거 문장 수 반영)
       function calcAxis(leftKey, rightKey) {
         const leftScore = scores[leftKey];
         const rightScore = scores[rightKey];
@@ -1120,7 +1263,7 @@
         if (!isLack && total > 0 && validQuotes > 0) {
           const margin = Math.abs(leftScore - rightScore);
           const marginRatio = margin / total; // 0.0 ~ 1.0
-          const evidenceFactor = Math.min(1.0, validQuotes / 3); // 1문장: 0.33, 2문장: 0.67, 3문장 이상: 1.0
+          const evidenceFactor = Math.min(1.0, validQuotes / 3);
           confidence = Math.round(30 + (40 * marginRatio) + (25 * evidenceFactor));
           if (marginRatio === 0) {
             confidence = Math.min(confidence, 45);
@@ -1167,66 +1310,170 @@
       };
     }
 
-    // P1-2: 입력 textarea 변경·초기화 시 분석 상태 및 마스킹 뷰 리셋
+    // P1 수정: 입력 textarea 변경·초기화 시 분석 상태, 마스킹 뷰, 종합 섹션 잠금 상태 즉시 리셋
     function resetAnalysisState() {
       parsedData = null;
       if (maskedChatPreview) maskedChatPreview.textContent = "";
       if (maskedPreviewWrapper) maskedPreviewWrapper.style.display = "none";
       if (reportSection) reportSection.style.display = "none";
+
+      // 종합 결과 잠금 뷰 복귀 및 컨텐츠 초기화 (이전 실명·결과 UI 잔류 방지)
+      if (paywallLockedView) paywallLockedView.style.display = "block";
+      if (paywallUnlockedView) paywallUnlockedView.style.display = "none";
+      if (deepMbtiAnalysisBox) deepMbtiAnalysisBox.innerHTML = "";
     }
 
-    // 이벤트 리스너
-    btnLoadSample.addEventListener("click", () => {
-      rawChatInput.value = SAMPLE_CONVERSATION;
-      onChatTextChange();
-    });
-
-    rawChatInput.addEventListener("input", onChatTextChange);
-    speakerSelect.addEventListener("change", (e) => {
-      selectedSpeaker = e.target.value;
-      resetAnalysisState();
-    });
-
-    btnToggleMasked.addEventListener("click", () => {
-      if (!parsedData) {
-        parseAndMask();
+    // 페이월 토큰 관리 헬퍼 (localStorage 24시간 만료)
+    function getPaywallToken() {
+      try {
+        if (typeof localStorage === "undefined") return null;
+        const raw = localStorage.getItem(STORAGE_PAYWALL_TOKEN_KEY);
+        if (!raw) return null;
+        const token = JSON.parse(raw);
+        if (!token || typeof token.expiresAt !== "number") return null;
+        if (Date.now() > token.expiresAt) {
+          localStorage.removeItem(STORAGE_PAYWALL_TOKEN_KEY);
+          return null;
+        }
+        return token;
+      } catch (e) {
+        return null;
       }
-      maskedPreviewWrapper.style.display = maskedPreviewWrapper.style.display === "none" ? "block" : "none";
-    });
+    }
 
-    btnAnalyze.addEventListener("click", runAnalysis);
+    function savePaywallToken() {
+      try {
+        if (typeof localStorage === "undefined") return null;
+        const token = {
+          unlocked: true,
+          amount: PAYWALL_PRICE,
+          unlockedAt: Date.now(),
+          expiresAt: Date.now() + TOKEN_EXPIRY_MS
+        };
+        localStorage.setItem(STORAGE_PAYWALL_TOKEN_KEY, JSON.stringify(token));
+        return token;
+      } catch (e) {
+        return null;
+      }
+    }
 
-    btnDownloadCard.addEventListener("click", () => {
-      if (!shareCanvas) return;
-      const dataUrl = shareCanvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      // P1-1: 실명 미포함 파일명
-      a.download = "mbti-card-hwajaA.png";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    });
+    function checkPaywallUnlocked() {
+      const token = getPaywallToken();
+      return token !== null && token.unlocked === true;
+    }
 
-    function onChatTextChange() {
+    // 페이월 UI 렌더링
+    function renderPaywallUI(mbti) {
+      const isUnlocked = checkPaywallUnlocked();
+      if (!paywallLockedView || !paywallUnlockedView) return;
+
+      if (paywallDemoBadge) {
+        paywallDemoBadge.style.display = TOSS_PAYMENTS_CLIENT_KEY ? "none" : "inline-block";
+      }
+
+      if (isUnlocked) {
+        paywallLockedView.style.display = "none";
+        paywallUnlockedView.style.display = "block";
+        const token = getPaywallToken();
+        if (token && paywallExpiryNotice) {
+          const remainingHours = Math.max(0, Math.round((token.expiresAt - Date.now()) / (1000 * 60 * 60)));
+          paywallExpiryNotice.textContent = `(남은 유효 시간: 약 ${remainingHours}시간)`;
+        }
+        if (deepMbtiAnalysisBox && mbti) {
+          renderDeepMbtiAnalysis(deepMbtiAnalysisBox, mbti);
+        }
+      } else {
+        paywallLockedView.style.display = "block";
+        paywallUnlockedView.style.display = "none";
+        if (deepMbtiAnalysisBox) deepMbtiAnalysisBox.innerHTML = "";
+      }
+    }
+
+    // 심층 MBTI 4축 해석 & 소통 전략 렌더링 (실명 완전 마스킹 유지)
+    function renderDeepMbtiAnalysis(container, mbti) {
+      const targetLabel = "나(화자A)";
+      const type = mbti.isLack ? "중립/분석보류" : mbti.mbtiType;
+
+      container.innerHTML = `
+        <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px;">
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-bottom: 10px;">
+            🎯 [500원 프리미엄] ${targetLabel} 심층 MBTI 4축 해석 & 소통 전략 (${type})
+          </h4>
+          <div style="font-size: 0.88rem; color: #334155; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <strong>• 에너지 방향 (${mbti.axisEI.dominant} 우세, ${mbti.axisEI.leftRatio}% : ${mbti.axisEI.rightRatio}%):</strong>
+              ${mbti.axisEI.dominant === 'E' 
+                ? `${targetLabel}는 대화 흐름을 주도하며 적극적으로 에너지를 교류할 때 활력을 얻습니다. 타 화자와의 협업 시 아이디어를 말로 풀며 발전시키는 스타일입니다.`
+                : `${targetLabel}는 생각을 깊이 정리한 뒤 신중하게 의견을 표출하는 편입니다. 충분한 숙고 시간과 1:1 대화 환경에서 최상의 역량을 발휘합니다.`}
+            </div>
+            <div>
+              <strong>• 정보 인식 (${mbti.axisSN.dominant} 우세, ${mbti.axisSN.leftRatio}% : ${mbti.axisSN.rightRatio}%):</strong>
+              ${mbti.axisSN.dominant === 'S'
+                ? `실제 사실과 구체적인 수치 데이터, 명확한 현실적 근거를 바탕으로 소통하는 것을 선호합니다. 모호한 추상화보다 실행 가능한 체크리스트에 집중합니다.`
+                : `행간의 의미와 미래의 가능성, 창의적 영감을 중시합니다. 구체적인 세부사항에 앞서 전체적인 비전과 큰 그림을 공유할 때 동기가 극대화됩니다.`}
+            </div>
+            <div>
+              <strong>• 의사 결정 (${mbti.axisTF.dominant} 우세, ${mbti.axisTF.leftRatio}% : ${mbti.axisTF.rightRatio}%):</strong>
+              ${mbti.axisTF.dominant === 'T'
+                ? `합리적 논리와 공정한 원칙, 객관적 인과관계를 최우선으로 판단합니다. 갈등 상황에서는 감정적 위로보다 문제의 본질적 해결책을 찾는 접근을 취합니다.`
+                : `관계의 조화와 상대방의 감정선, 따뜻한 배려를 중시합니다. 피드백을 주고받을 때 상처받지 않도록 쿠션 언어를 적극 활용하는 소통 방식을 지향합니다.`}
+            </div>
+            <div>
+              <strong>• 생활 양식 (${mbti.axisJP.dominant} 우세, ${mbti.axisJP.leftRatio}% : ${mbti.axisJP.rightRatio}%):</strong>
+              ${mbti.axisJP.dominant === 'J'
+                ? `체계적인 시간 계획과 마감 기한 엄수를 통해 심리적 안정감을 얻습니다. 갑작스러운 일정 변경보다는 사전에 합의된 타임라인대로 실행되길 기대합니다.`
+                : `상황 변화에 유연하게 대처하며 즉흥적인 융통성을 발휘합니다. 지나치게 엄격한 규율보다는 자율성과 선택의 여지가 열려 있는 환경을 선호합니다.`}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 파일 업로드 처리 함수 (accept='.txt', 1MB 제한, FileReader)
+    function handleChatFileUpload(file) {
+      if (!file) return false;
+      const MAX_FILE_SIZE = 1024 * 1024; // 1MB
+      if (file.size > MAX_FILE_SIZE) {
+        alert("1MB를 초과하는 파일은 업로드할 수 없습니다.");
+        return false;
+      }
+
+      selectedSpeaker = "";
       resetAnalysisState();
+
+      if (typeof FileReader !== "undefined") {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const text = (e.target && e.target.result) || "";
+          rawChatInput.value = text;
+          onChatTextChange();
+        };
+        reader.readAsText(file, "utf-8");
+      }
+      return true;
+    }
+
+    // textarea 입력 변경 시 핸들러 (P1 수정: selectedSpeaker, 분석결과, 마스킹뷰, 종합섹션 초기화)
+    function onChatTextChange() {
+      selectedSpeaker = "";
+      resetAnalysisState();
+
       const text = rawChatInput.value.trim();
       if (!text) {
         speakerSelect.innerHTML = '<option value="">대화를 입력하거나 파싱하면 화자 목록이 나타납니다</option>';
         return;
       }
-      // P2-5: 콜론이 포함된 화자명도 올바르게 추출
+
+      // 첫 ' : ' 기준 우선 화자 분리
       const lines = text.split(/\r?\n/);
-      const msgRegex = /^\[(오전|오후)\s*(\d{1,2}):(\d{2})\]\s*(.+)\s*:\s*(.*)/;
       const speakers = new Set();
       for (const line of lines) {
-        const m = line.match(msgRegex);
-        if (m) {
-          speakers.add(m[4].trim());
+        const parsed = splitHeaderAndContent(line);
+        if (parsed && parsed.rawSpeaker) {
+          speakers.add(parsed.rawSpeaker);
         }
       }
 
-      const current = speakerSelect.value;
       speakerSelect.innerHTML = "";
       if (speakers.size === 0) {
         speakerSelect.innerHTML = '<option value="">화자를 감지할 수 없습니다</option>';
@@ -1240,14 +1487,85 @@
           const opt = document.createElement("option");
           opt.value = spk;
           opt.textContent = `${spk} (선택 시 나/화자A로 치환)`;
-          if (spk === current || (speakers.size === 1 && !current)) {
-            opt.selected = true;
-            selectedSpeaker = spk;
-          }
           speakerSelect.appendChild(opt);
         });
       }
     }
+
+    // 이벤트 리스너 등록
+    btnLoadSample.addEventListener("click", () => {
+      rawChatInput.value = SAMPLE_CONVERSATION;
+      onChatTextChange();
+    });
+
+    rawChatInput.addEventListener("input", onChatTextChange);
+
+    speakerSelect.addEventListener("change", (e) => {
+      selectedSpeaker = e.target.value;
+      resetAnalysisState();
+    });
+
+    if (chatFileInput) {
+      chatFileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          handleChatFileUpload(file);
+          chatFileInput.value = "";
+        }
+      });
+    }
+
+    btnToggleMasked.addEventListener("click", () => {
+      if (!parsedData) {
+        parseAndMask();
+      }
+      maskedPreviewWrapper.style.display = maskedPreviewWrapper.style.display === "none" ? "block" : "none";
+    });
+
+    btnAnalyze.addEventListener("click", runAnalysis);
+
+    if (btnUnlockPaywall) {
+      btnUnlockPaywall.addEventListener("click", () => {
+        if (TOSS_PAYMENTS_CLIENT_KEY) {
+          // 실제 토스페이먼츠 연동 분기
+          if (typeof window !== "undefined" && typeof window.TossPayments === "function") {
+            const tossPayments = window.TossPayments(TOSS_PAYMENTS_CLIENT_KEY);
+            tossPayments.requestPayment("카드", {
+              amount: PAYWALL_PRICE,
+              orderId: "ORDER_" + Date.now(),
+              orderName: "MBTI+사주 종합 결과 보기",
+              successUrl: window.location.href.split("?")[0] + "?payment=success",
+              failUrl: window.location.href.split("?")[0] + "?payment=fail"
+            }).catch(err => alert("결제 실패: " + err.message));
+            return;
+          }
+        }
+
+        // 데모 모드 분기 (TOSS_PAYMENTS_CLIENT_KEY가 비어 있는 경우 즉시 unlock)
+        savePaywallToken();
+        if (parsedData) {
+          const targetMsgs = parsedData.messages.filter(m => m.isTarget);
+          const metrics = calculateMetrics(parsedData.messages);
+          const mbti = scoreMBTI(targetMsgs, metrics);
+          renderPaywallUI(mbti);
+        } else {
+          renderPaywallUI(null);
+        }
+        alert("데모 모드: 500원 결제가 성공적으로 시뮬레이션되어 'MBTI+사주 종합 결과 보기'가 24시간 동안 잠금 해제되었습니다.");
+      });
+    }
+
+    btnDownloadCard.addEventListener("click", () => {
+      if (!shareCanvas) return;
+      const dataUrl = shareCanvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      // P1-1: 실명 미포함 파일명
+      a.download = "mbti-card-hwajaA.png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
 
     // 파싱 및 개인정보 마스킹 실행
     function parseAndMask() {
@@ -1280,7 +1598,7 @@
 
       const targetMsgs = parsed.messages.filter(m => m.isTarget);
       if (targetMsgs.length === 0) {
-        alert("선택된 화자의 메시지가 없습니다.");
+        alert("선택된 화자의 메시지가 없습니다. 상단에서 분석 대상 화자를 선택해주세요.");
         return;
       }
 
@@ -1305,7 +1623,7 @@
       }
       mbtiTargetDisplay.textContent = `분석 대상: 나(화자A) | 총 ${metrics.count}개 발화 분석`;
 
-      // 2. 정량 지표 (P2-6)
+      // 2. 정량 지표
       document.getElementById("metricMsgCount").textContent = `${metrics.count}개`;
       document.getElementById("metricAvgLen").textContent = `${metrics.avgLen}자`;
       document.getElementById("metricInitiateRate").textContent = metrics.initiateRateDisplay;
@@ -1395,6 +1713,9 @@
 
       // 5. Canvas 공유 카드 렌더링 (P1-1: 실명 완전 제거)
       drawShareCard(mbti, metrics, "나(화자A)");
+
+      // 6. 500원 페이월 종합 결과 영역 렌더링 (재방문 시 localStorage 토큰 복원)
+      renderPaywallUI(mbti);
 
       // 스크롤 이동
       reportSection.scrollIntoView({ behavior: "smooth" });
@@ -1536,15 +1857,64 @@
 
     // Node 테스트 환경 지원 (tests/run_tests.mjs)
     if (typeof window === "undefined") {
+      Object.defineProperty(globalThis, "selectedSpeaker", {
+        get: () => selectedSpeaker,
+        set: (v) => { selectedSpeaker = v; },
+        configurable: true
+      });
+      Object.defineProperty(globalThis, "parsedData", {
+        get: () => parsedData,
+        set: (v) => { parsedData = v; },
+        configurable: true
+      });
       globalThis.maskPII = maskPII;
+      globalThis.isDatePattern = isDatePattern;
+      globalThis.splitHeaderAndContent = splitHeaderAndContent;
       globalThis.parseChatText = parseChatText;
       globalThis.calculateMetrics = calculateMetrics;
       globalThis.scoreMBTI = scoreMBTI;
       globalThis.DICTIONARY = DICTIONARY;
       globalThis.PERSONA_MAP = PERSONA_MAP;
+      globalThis.TOSS_PAYMENTS_CLIENT_KEY = TOSS_PAYMENTS_CLIENT_KEY;
+      globalThis.PAYWALL_PRICE = PAYWALL_PRICE;
+      globalThis.STORAGE_PAYWALL_TOKEN_KEY = STORAGE_PAYWALL_TOKEN_KEY;
+      globalThis.TOKEN_EXPIRY_MS = TOKEN_EXPIRY_MS;
+      globalThis.getPaywallToken = getPaywallToken;
+      globalThis.savePaywallToken = savePaywallToken;
+      globalThis.checkPaywallUnlocked = checkPaywallUnlocked;
+      globalThis.renderPaywallUI = renderPaywallUI;
+      globalThis.renderDeepMbtiAnalysis = renderDeepMbtiAnalysis;
+      globalThis.handleChatFileUpload = handleChatFileUpload;
+      globalThis.resetAnalysisState = resetAnalysisState;
+      globalThis.onChatTextChange = onChatTextChange;
     }
     if (typeof module !== "undefined" && module.exports) {
-      module.exports = { maskPII, parseChatText, calculateMetrics, scoreMBTI, DICTIONARY, PERSONA_MAP };
+      module.exports = {
+        get selectedSpeaker() { return selectedSpeaker; },
+        set selectedSpeaker(v) { selectedSpeaker = v; },
+        get parsedData() { return parsedData; },
+        set parsedData(v) { parsedData = v; },
+        maskPII,
+        isDatePattern,
+        splitHeaderAndContent,
+        parseChatText,
+        calculateMetrics,
+        scoreMBTI,
+        DICTIONARY,
+        PERSONA_MAP,
+        TOSS_PAYMENTS_CLIENT_KEY,
+        PAYWALL_PRICE,
+        STORAGE_PAYWALL_TOKEN_KEY,
+        TOKEN_EXPIRY_MS,
+        getPaywallToken,
+        savePaywallToken,
+        checkPaywallUnlocked,
+        renderPaywallUI,
+        renderDeepMbtiAnalysis,
+        handleChatFileUpload,
+        resetAnalysisState,
+        onChatTextChange
+      };
     }
 
     // 초기 상태에서 샘플 대화 자동 준비
