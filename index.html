@@ -718,6 +718,7 @@
         <div class="card-title">
           <span>사주 · TCI 3소스 종합 (v2)</span>
         </div>
+        <button id="btnOneShot" class="btn-primary" style="width: 100%; margin-bottom: 12px;">한방에 전체 리포트 만들기 (대화 + 사주 + TCI)</button>
         <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기 근사(경계일 ±1일 가능)·시간대 UTC+9 고정·민간시 기준(진태양시 미적용).</p>
         <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; margin-bottom: 8px;">
           <input type="date" id="v2BirthDate" aria-label="생년월일">
@@ -747,23 +748,6 @@
     </div>
 
     <!-- v2 확장 사주·TCI 융합 분석 티저 -->
-    <section class="v2-teaser-card">
-      <div class="v2-teaser-title">
-        <span>v2: 사주 명식 · TCI 융합 — 아래 카드에서 바로 사용</span>
-      </div>
-      <p class="v2-teaser-desc">
-        v2 버전에서는 단순 언어 습관을 넘어 <strong>사주 8자·오행 분포·십성 명식</strong> 계산 모듈과 
-        신뢰할 수 있는 <strong>검토 루브릭</strong> 체계를 탑재합니다. 여기에 12~20문항의 <strong>TCI</strong>(기질 및 성격 검사) 
-        미니 자기보고를 흡수하여, [대화 텍스트 휴리스틱 + 사주 명리 + TCI 착안 자기보고] 3소스를 나란히 비교하는 입체적 자기이해 엔진이 아래 카드에서 동작합니다.
-      </p>
-      <div class="v2-tag-group">
-        <span class="v2-tag">사주 오행 분포 (목·화·토·금·수)</span>
-        <span class="v2-tag">십성 명식 (비견·겁재·식신·상관 등)</span>
-        <span class="v2-tag">사주 기초검토 루브릭</span>
-        <span class="v2-tag">TCI 기질 4차원 & 성격 3차원</span>
-        <span class="v2-tag">3소스 크로스 융합 분석</span>
-      </div>
-    </section>
   </div>
 
   <script>
@@ -1457,10 +1441,16 @@
       if (deepFree) deepFree.innerHTML = "";
       const deepSection = document.getElementById("deepAnalysisSection");
       if (deepSection) deepSection.style.display = "none";
-      // v2 상태: 대화 파생 결과(mbti)만 초기화 — 사주·TCI는 사용자 입력 특성이라 유지
+      // v2 상태: 대화 파생 결과(mbti)와 제갈량 리포트를 초기화 — 사주·TCI는 사용자 입력 특성이라 유지
       if (typeof v2State !== "undefined") {
         v2State.mbti = null;
         renderFusionIfReady();
+      }
+      if (typeof jegalState !== "undefined" && jegalState) {
+        jegalState.sections = null;
+        jegalState.shown = 0;
+        const jbox = document.getElementById("jegalReportBox");
+        if (jbox) jbox.innerHTML = "";
       }
     }
 
@@ -1626,17 +1616,24 @@
     function fusionRow(theme, mbti, tci, saju) {
       // null-safe: 어느 소스가 비어 있어도 예외 없이 대기 문구를 돌려준다
       let chatLine = "대화 분석 전 — 리포트를 먼저 만들어 주세요";
+      let chatDir = null; // "high" | "low" | null(보류·미분석)
       if (mbti && mbti["axis" + theme.axis]) {
         const axis = mbti["axis" + theme.axis];
-        chatLine = axis.isLack
-          ? "판단 보류 — 근거 문장이 부족해요"
-          : `${axis.dominant} 쪽 관찰됨 (근거 문장 ${axis.validQuotes}개)`;
+        if (axis.isLack) {
+          chatLine = "판단 보류 — 근거 문장이 부족해요";
+        } else {
+          chatLine = `${axis.dominant} 쪽 관찰됨 (근거 문장 ${axis.validQuotes}개)`;
+          chatDir = axis.dominant === theme.high ? "high" : "low";
+        }
       }
       let tciLine = "TCI 응답 대기 중";
-      let tciPos = null;
+      let tciDir = null; // "high" | "mid" | "low" | null(미응답)
       if (tci) {
         const vals = theme.tciAreas.map(a => tci[a] ? tci[a].score : null).filter(v => v !== null);
-        tciPos = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) >= 3 : null;
+        if (vals.length) {
+          const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+          tciDir = avg >= 3.5 ? "high" : avg <= 2.5 ? "low" : "mid";
+        }
         tciLine = theme.tciAreas.map(a => tci[a] ? `${a}: ${tci[a].label} (${tci[a].score})` : `${a}: 미응답`).join(" · ");
       }
       let sajuLine = "명식 계산 대기 중";
@@ -1650,8 +1647,12 @@
         const axis = mbti["axis" + theme.axis];
         chatPos = !axis.isLack && axis.dominant === theme.high;
       }
-      // 관점 비교는 응답·계산이 모두 있을 때만 표기한다
-      const agree = (chatPos === null) ? "대화 분석 전" : (tciPos === null ? "TCI 대기" : (chatPos && tciPos ? "방향 비슷" : "관점 갈림"));
+      // 관점 비교: 양쪽 방향이 확정될 때만 판정, 중립·보류는 별도 표기
+      let agree;
+      if (chatDir === null) agree = (mbti && mbti["axis" + theme.axis]) ? "대화 쪽 보류" : "대화 분석 전";
+      else if (tciDir === null) agree = "TCI 대기";
+      else if (tciDir === "mid") agree = "자기보고 중립";
+      else agree = (chatDir === tciDir) ? "방향 비슷" : "관점 갈림";
       return { label: theme.label, chat: chatLine, tci: tciLine, saju: sajuLine, agree };
     }
 
@@ -1795,7 +1796,7 @@
           title: "4. 대화 관찰과의 대조 — 지도 두 장 겹쳐 보기",
           html: `
             <div style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">${axisLines}</div>
-            <p style="font-size: 0.9rem; line-height: 1.7;">여덟 글자의 지형과 실제 발화의 관찰이 같은 방향이면 신뢰의 근거가 늘고, 갈리면 그 주제가 성찰 포인트란다. 어느 쪽이 옳다 단정할 근거는 없다.</p>
+            <p style="font-size: 0.9rem; line-height: 1.7;">여덟 글자의 지형과 실제 발화의 관찰이 같은 방향이면 두 관찰이 서로를 뒷받침하는 셈이고, 갈리면 그 주제가 성찰 포인트란다. 어느 쪽이 옳다 단정할 근거는 없다.</p>
             <p style="font-size: 0.82rem; color: var(--text-muted);">두 지도는 서로 다른 방식의 관찰이며, 하나로 합쳐 점수 매기지 않는다.</p>`
         });
       }
@@ -1855,13 +1856,36 @@
       }
     }
 
+    function openJegalReport() {
+      if (!v2State.saju) { alert("명식 계산을 먼저 진행해주세요."); return; }
+      jegalState.sections = buildJegalReport(v2State.saju, v2State.mbti, v2State.tci);
+      jegalState.shown = 1;
+      renderJegalStep();
+    }
     const btnJegal = document.getElementById("btnJegalReport");
     if (btnJegal) {
-      btnJegal.addEventListener("click", () => {
-        if (!v2State.saju) { alert("명식 계산을 먼저 진행해주세요."); return; }
-        jegalState.sections = buildJegalReport(v2State.saju, v2State.mbti, v2State.tci);
-        jegalState.shown = 1;
-        renderJegalStep();
+      btnJegal.addEventListener("click", openJegalReport);
+    }
+    // 한방에: 대화 분석 → 명식 → (TCI 답변 시 자동 이어짐)까지 한 번에
+    let oneShotPending = false;
+    const btnOneShot = document.getElementById("btnOneShot");
+    if (btnOneShot) {
+      btnOneShot.addEventListener("click", () => {
+        const hasText = rawChatInput.value.trim().length > 0;
+        if (hasText) runAnalysis();
+        if (document.getElementById("v2BirthDate").value) {
+          if (!calcSajuFromInputs()) return;
+        }
+        if (tciAllAnswered()) {
+          submitTci();
+          openJegalReport();
+          alert("전체 리포트가 준비됐습니다. 아래에서 단계별로 확인해주세요.");
+        } else {
+          oneShotPending = true;
+          const tr = document.getElementById("tciResult");
+          if (tr) tr.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted);\">TCI 12문항만 답하면 채점·3소스 비교·제갈량 리포트가 자동으로 이어집니다.</p>";
+          document.getElementById("tciQuestions").scrollIntoView({ behavior: "smooth" });
+        }
       });
     }
 
@@ -1929,32 +1953,52 @@
         </div>`).join("");
     }
 
+    function calcSajuFromInputs() {
+      const dv = document.getElementById("v2BirthDate").value;
+      const tv = document.getElementById("v2BirthTime").value;
+      const noTime = document.getElementById("v2NoTime").checked;
+      if (!dv) { alert("생년월일을 먼저 입력해주세요."); return false; }
+      const parts = dv.split("-").map(Number);
+      let hour = null;
+      if (!noTime && tv) hour = parseInt(tv.split(":")[0], 10);
+      const pillars = calcPillars(parts[0], parts[1], parts[2], hour, noTime || !tv);
+      v2State.saju = sajuSummary(pillars);
+      renderSaju(pillars);
+      renderFusionIfReady();
+      return true;
+    }
     if (btnCalcSaju) {
-      btnCalcSaju.addEventListener("click", () => {
-        const dv = document.getElementById("v2BirthDate").value;
-        const tv = document.getElementById("v2BirthTime").value;
-        const noTime = document.getElementById("v2NoTime").checked;
-        if (!dv) { alert("생년월일을 먼저 입력해주세요."); return; }
-        const parts = dv.split("-").map(Number);
-        let hour = null;
-        if (!noTime && tv) hour = parseInt(tv.split(":")[0], 10);
-        const pillars = calcPillars(parts[0], parts[1], parts[2], hour, noTime || !tv);
-        v2State.saju = sajuSummary(pillars);
-        renderSaju(pillars);
-        renderFusionIfReady();
-      });
+      btnCalcSaju.addEventListener("click", calcSajuFromInputs);
+    }
+    function tciAllAnswered() {
+      for (let i = 0; i < TCI_QUESTIONS.length; i++) {
+        if (!document.querySelector(`input[name="tciq${i}"]:checked`)) return false;
+      }
+      return true;
+    }
+    function submitTci() {
+      const answers = [];
+      for (let i = 0; i < TCI_QUESTIONS.length; i++) {
+        const sel = document.querySelector(`input[name="tciq${i}"]:checked`);
+        if (!sel) { alert(`${i + 1}번 문항에 응답해주세요.`); return false; }
+        answers.push(Number(sel.value));
+      }
+      v2State.tci = tciScore(answers);
+      renderTci(v2State.tci);
+      renderFusionIfReady();
+      return true;
     }
     if (btnTciSubmit) {
-      btnTciSubmit.addEventListener("click", () => {
-        const answers = [];
-        for (let i = 0; i < TCI_QUESTIONS.length; i++) {
-          const sel = document.querySelector(`input[name="tciq${i}"]:checked`);
-          if (!sel) { alert(`${i + 1}번 문항에 응답해주세요.`); return; }
-          answers.push(Number(sel.value));
+      btnTciSubmit.addEventListener("click", submitTci);
+    }
+    // 한방에: TCI 마지막 문항까지 답하면 나머지(채점·융합·제갈량 1단계)가 자동 완성된다
+    const tciQBox = document.getElementById("tciQuestions");
+    if (tciQBox) {
+      tciQBox.addEventListener("change", () => {
+        if (oneShotPending && tciAllAnswered()) {
+          oneShotPending = false;
+          if (submitTci()) openJegalReport();
         }
-        v2State.tci = tciScore(answers);
-        renderTci(v2State.tci);
-        renderFusionIfReady();
       });
     }
     buildTciQuestions();
