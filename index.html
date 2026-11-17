@@ -1826,8 +1826,9 @@
 
     function jegalBar(el, count, total) {
       const w = total > 0 ? Math.round((count / total) * 100) : 0;
+      const OHANG_KR = { "木": "목", "火": "화", "土": "토", "金": "금", "水": "수" };
       return `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-        <span style="width: 28px; font-weight: 700;">${el}</span>
+        <span style="width: 48px; font-weight: 700;">${OHANG_KR[el] || el}(${el})</span>
         <div style="flex: 1; height: 10px; background: var(--surface-muted); border-radius: 5px; overflow: hidden;"><div style="width: ${w}%; height: 100%; background: var(--primary);"></div></div>
         <span style="width: 30px; text-align: right; font-variant-numeric: tabular-nums;">${count}개</span>
       </div>`;
@@ -1881,7 +1882,7 @@
       sections.push({
         title: "1. 명식 개관 — 출발 지형도",
         html: `
-          <div style="font-weight: 700; margin-bottom: 6px;">${pillarsRow} <span style="font-size: 0.8rem; color: var(--text-muted);">(${p.ruleVersion})</span></div>
+          <div style="font-weight: 700; margin-bottom: 6px;">${pillarsRow}</div>
           <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">兵法에 이르기를 "나를 알고 적을 알면 백 번 싸워 위태롭지 않다" 하였다. 대화 기록은 知己(지기, 나를 앎)의 첫걸음이고, 이 여덟 글자는 또 하나의 지도다.</p>
           <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">일간 ${p.day.gan} — ${ILGAN_NOTE[dayStem]}.</p>
           <p style="font-size: 0.82rem; color: var(--text-muted);">${gloss("사주팔자")} · ${gloss("일간")}</p>`
@@ -2074,7 +2075,7 @@
           .catch(e => alert("서버 승인 검증 실패: " + e.message));
       } else if (qs.get("payment") === "success") {
         const st = document.getElementById("premiumStatus");
-        if (st) st.textContent = "결제 리다이렉트 도착 — 서버 승인 검증(WORKERS_URL) 설정 후 열람권이 발급됩니다.";
+        if (st) st.textContent = "결제 리다이렉트 도착 — 승인 서버 설정 후 열람권이 발급됩니다.";
       }
     } catch (e) {}
     renderPremiumState();
@@ -2205,6 +2206,12 @@
       v2State.birthY = parts[0];
       renderDaewun(dw, parts[0]);
       renderFusionIfReady();
+      // 계산 완료 후 출생정보 접기 + 캔버스가 이미 렌더돼 있으면 갱신
+      const bd = document.getElementById("birthDetails");
+      if (bd) bd.open = false;
+      if (document.getElementById("reportSection").style.display === "block") {
+        runAnalysis();
+      }
       return true;
     }
     // 대운·연운 — ruleVersion v2.1-termlong(정밀 절기 기반 대운수)
@@ -2264,22 +2271,19 @@
       }
       const thisYear = new Date().getFullYear();
       const age = thisYear - birthY;
-      // 현재 구간과 앞뒤 구간을 우선 표시, 전체 목록은 접힘으로 제공
-      let rows = "";
-      dw.list.forEach((d, i) => {
+      // 현재 구간과 앞뒤 구간을 우선 표시, 전체 목록은 접힘(details)으로 제공
+      const rowsHtml = dw.list.map((d, i) => {
         const inRange = age >= d.age && age < d.age + 10;
-        const nearby = inRange || (i > 0 && age >= dw.list[i - 1].age && age < dw.list[i - 1].age + 10) || (i < dw.list.length - 1 && age >= dw.list[i + 1].age && age < dw.list[i + 1].age + 10);
-        const rowHtml = `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 8px 0; font-size: 0.92rem;${inRange ? " font-weight: 700; border-left: 3px solid var(--primary); padding-left: 10px;" : ""}">
+        return `<div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 8px 0; font-size: 0.92rem;${inRange ? " font-weight: 700; border-left: 3px solid var(--primary); padding-left: 10px;" : ""}">
           <span>${d.age}세~${d.age + 9}세 ${d.gan}${d.ji}${inRange ? " — 현재" : ""}</span>
         </div>`;
-        if (nearby || i < 2) {
-          rows += rowHtml;
-        } else {
-          if (!s.includes("DAEWUN_REST_OPEN_" + i)) {
-            rows += rowHtml;
-          }
-        }
       });
+      const nearbyIdx = dw.list.findIndex(d => age >= d.age && age < d.age + 10);
+      let rows = "";
+      [nearbyIdx - 1, nearbyIdx, nearbyIdx + 1].forEach(i => {
+        if (i >= 0 && i < rowsHtml.length) rows += rowsHtml[i];
+      });
+      const restHtml = rowsHtml.filter((_, i) => i < nearbyIdx - 1 || i > nearbyIdx + 1).join("");
       // 향후 10년 세운(연간지) — 전통 간지 순환 적용
       let yeonunRows = "";
       for (let i = 0; i < 10; i++) {
@@ -2291,6 +2295,10 @@
         <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px; margin-top: 12px;">
           <div style="font-weight: 700; margin-bottom: 8px;">대운 — 10년 단위 흐름 <span style="font-size: 0.8rem; color: var(--text-muted);">(${dw.forward ? "순행" : "역행"})</span></div>
           ${rows}
+          <details style="margin-top: 10px;">
+            <summary style="cursor: pointer; font-size: 14px; color: var(--primary); font-weight: 600;">대운 전체 목록 보기 (8구간)</summary>
+            <div style="margin-top: 8px;">${restHtml}</div>
+          </details>
           <div style="font-size: 0.85rem; margin-top: 8px;"><strong>향후 10년 세운:</strong> ${yeonunRows}</div>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">절기는 태양 황경 계산(±10분 내외, ΔT·진태양시 미적용)이며 대운수·구간 해석은 관행적 프레임이고 확정 운세가 아닙니다.</p>
         </div>`;
