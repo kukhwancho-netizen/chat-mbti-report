@@ -96,12 +96,7 @@
       margin-bottom: 12px;
     }
 
-    .subtitle {
-      font-size: 18px;
-      line-height: 30px;
-      color: var(--text-muted);
-      margin-bottom: 20px;
-    }
+
 
     /* 공지 배너 */
     .v2-input-grid {
@@ -2659,6 +2654,10 @@
     }
 
     btnDownloadCard.addEventListener("click", () => {
+      if (!(v2State.saju && v2State.daewun)) {
+        alert("먼저 대화 분석과 명식 계산을 완료해 주세요.\n생년월일 입력 후 '명식 계산'을 누르면 사주·대운이 표에 추가됩니다.");
+        return;
+      }
       if (!(premiumPaid || getPremiumToken())) {
         alert("상세 리포트(PNG) 저장은 500원 결제 후 이용할 수 있습니다.\n아래 '멘탈제갈량 상세 리포트' 카드에서 결제해주세요. (데모 모드에서는 무료 미리보기)");
         return;
