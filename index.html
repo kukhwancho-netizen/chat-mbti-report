@@ -537,7 +537,7 @@
       <div class="card-title">
         <span>대화 입력</span>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <label for="chatFileInput" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+          <label for="chatFileInput" id="chatFileInputLabel" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
             파일 불러오기 (.txt)
           </label>
           <input type="file" id="chatFileInput" accept=".txt" style="display: none;">
@@ -2600,6 +2600,14 @@
       resetAnalysisState();
     });
 
+    // 파일 불러오기 label 클릭 시 명시적으로 파일 선택창 호출 (label-for 미동작 브라우저 대응)
+    const chatFileInputLabel = document.getElementById("chatFileInputLabel");
+    if (chatFileInputLabel) {
+      chatFileInputLabel.addEventListener("click", (e) => {
+        e.preventDefault();
+        chatFileInput.click();
+      });
+    }
     if (chatFileInput) {
       chatFileInput.addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
