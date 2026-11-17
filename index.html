@@ -538,15 +538,15 @@
         <span>대화 입력</span>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           <label for="chatFileInput" id="chatFileInputLabel" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-            파일 불러오기 (.txt)
+            파일 불러오기 (.txt · .csv)
           </label>
-          <input type="file" id="chatFileInput" accept=".txt" style="display: none;">
+          <input type="file" id="chatFileInput" accept=".txt,.csv,text/plain,text/csv" aria-label="대화 TXT 또는 CSV 파일 선택">
           <button id="btnLoadSample" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 12px;">
             예시로 체험
           </button>
         </div>
       </div>
-      <textarea id="rawChatInput" placeholder="카톡 대화(내보내기 텍스트)나 지피티 대화를 붙여넣으세요. [시간] 이름 : 내용 또는 이름: 내용 형식이면 자동으로 인식합니다."></textarea>
+      <textarea id="rawChatInput" placeholder="카톡 대화(내보내기 텍스트)나 지피티 대화·CSV를 붙여넣으세요. [시간] 이름 : 내용 또는 이름: 내용 형식이면 자동으로 인식합니다."></textarea>
       
       <div class="settings-row">
         <div class="form-group">
@@ -744,13 +744,13 @@
           <span>사주 · TCI 3소스 종합 (v2)</span>
         </div>
         <button id="btnOneShot" class="btn-primary" style="width: 100%; margin-bottom: 12px;">한방에 전체 리포트 만들기 (대화 + 사주 + TCI)</button>
-        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기는 태양 황경 계산(±10분 내외)·시간대는 현행 KST 기준(역사적 시간대·진태양시 미적용). 월주·대운의 입절 비교는 출생 시각을 시 단위로만 비교합니다(분 미포함).</p>
+        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기는 태양 황경 계산(±10분 내외)·시간대는 현행 KST 기준(역사적 시간대·진태양시 미적용). 양력·대한민국 현행 표준시 기준이며 1989년 이후 출생만 지원합니다. 절입 전후 10분은 계산을 보류합니다. 음력 날짜나 해외 출생 시각을 그대로 넣지 마세요. AI 프롬프트가 아닌 기기 내 계산·해석 규칙으로 작동합니다.</p>
         <details id="birthDetails">
           <summary style="cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-main); padding: 6px 0;">출생정보 입력·변경</summary>
           <div class="v2-input-grid" style="margin-top: 10px;">
             <div>
-              <label for="v2BirthDate" style="display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 4px;">출생일</label>
-              <input type="date" id="v2BirthDate" aria-label="생년월일" style="width: 100%; height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;">
+              <label for="v2BirthDate" style="display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 4px;">출생일 (양력·대한민국 출생 기준)</label>
+              <input type="date" id="v2BirthDate" min="1989-01-01" max="2100-12-31" aria-label="생년월일" style="width: 100%; height: 44px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;">
             </div>
             <div>
               <label for="v2BirthTime" style="display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 4px;">출생 시간 (24시간제)</label>
@@ -768,7 +768,7 @@
             <button id="btnCalcSaju" class="btn-primary">명식 계산</button>
           </div>
         </details>
-        <p style="font-size: 12px; line-height: 18px; color: var(--text-muted); margin: 0 0 8px;">성별을 입력하면 10년 단위 대운까지 계산합니다(전통 방식: 양년 남·음년 여 순행, 음년 남·양년 여 역행).</p>
+        <p style="font-size: 12px; line-height: 18px; color: var(--text-muted); margin: 0 0 8px;">성별과 출생 시간을 입력하면 10년 단위 대운의 근사 구간을 계산합니다(전통 방식: 양년 남·음년 여 순행, 음년 남·양년 여 역행).</p>
         <div id="sajuResult"></div>
         <div id="daewunResult"></div>
         <div style="margin-top: 24px;">
@@ -1041,6 +1041,55 @@
         rawSpeaker,
         content
       };
+    }
+
+    // CSV → 대화 텍스트 변환 (카톡 CSV 내보내기·일반 CSV 지원)
+    // 헤더에서 화자/내용/시간 열을 자동 감지, 나머지는 "화자: 내용" 라인으로 변환
+    function csvToChatText(csvText) {
+      // RFC 4180 cells: quoted commas/newlines and doubled quotes remain content.
+      const rows = []; let row = [], cell = "", quoted = false, closed = false;
+      const text = String(csvText).replace(/^\uFEFF/, "");
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (quoted) {
+          if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+          else if (ch === '"') { quoted = false; closed = true; }
+          else cell += ch;
+        } else if (ch === '"') {
+          if (cell.length || closed) return null;
+          quoted = true;
+        } else if (ch === ',' || ch === '\n' || ch === '\r') {
+          row.push(cell); cell = ""; closed = false;
+          if (ch !== ',') {
+            if (row.some(c => c.trim())) rows.push(row);
+            row = [];
+            if (ch === '\r' && text[i + 1] === '\n') i++;
+          }
+        } else {
+          if (closed && ch.trim()) return null;
+          if (!closed) cell += ch;
+        }
+      }
+      if (quoted) return null;
+      row.push(cell); if (row.some(c => c.trim())) rows.push(row);
+      if (!rows.length) return null;
+      const headers = rows[0].map(c => c.trim().toLowerCase());
+      const speakerAliases = ['화자', '이름', '닉네임', '작성자', '보낸 사람', '사용자', 'speaker', 'name', 'user', 'sender', 'role'];
+      const contentAliases = ['내용', '메시지', '대화내용', 'message', 'text', 'content'];
+      let si = headers.findIndex(c => speakerAliases.includes(c));
+      let ci = headers.findIndex(c => contentAliases.includes(c));
+      const hasHeader = si >= 0 || ci >= 0;
+      if (hasHeader && (si < 0 || ci < 0)) return null;
+      if (!hasHeader) { if (!rows.every(r => r.length === 2)) return null; si = 0; ci = 1; }
+      const lines = [];
+      for (const cells of rows.slice(hasHeader ? 1 : 0)) {
+        if (cells.length !== headers.length) return null;
+        const speaker = cells[si].trim(), content = cells[ci].trim();
+        if (!speaker || !content || /[\r\n:]/.test(speaker) || speaker.length > 30) return null;
+        // Indent continuations so embedded "label:" cannot become another speaker.
+        lines.push(speaker + ': ' + content.replace(/\r\n?|\n/g, ' '));
+      }
+      return lines.length >= 2 ? lines.join('\n') : null;
     }
 
     // 파싱 및 마스킹 순수 함수 (P1-2, P2-4, P2-5, P2 헤더분리)
@@ -1575,10 +1624,10 @@
     }
 
     // 입절 시각 기준 월지지: 출생 시각이 그 월의 입절 시각 이후면 현재 월, 이전이면 이전 월
-    function monthBranch(y, m, d, hour) {
+    function monthBranch(y, m, d, hour, minute = 0) {
       const t = findTermKST(y, m);
-      if (!t) return (m % 12);
-      const birthMinutes = d * 1440 + (hour || 0) * 60;
+      if (!t) throw new Error("절기 계산을 확인할 수 없습니다.");
+      const birthMinutes = d * 1440 + (hour ?? 0) * 60 + minute;
       const termMinutes = t.day * 1440 + t.hour * 60 + t.minute;
       if (birthMinutes >= termMinutes) return (m % 12);
       return ((m + 11) % 12);
@@ -1591,15 +1640,22 @@
       return 0;
     }
 
-    function calcPillars(y, m, d, hour, noTime) {
+    function calcPillars(y, m, d, hour, noTime, minute = 0) {
+      const check = new Date(Date.UTC(y, m - 1, d));
+      if (!Number.isInteger(y) || y < 1900 || y > 2100 || check.getUTCFullYear() !== y || check.getUTCMonth() !== m - 1 || check.getUTCDate() !== d) throw new Error("유효한 양력 날짜를 입력해 주세요.");
+      if (!noTime && (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59)) throw new Error("출생 시각을 확인해 주세요.");
+      const term = findTermKST(y, m);
+      if (!term) throw new Error("절기 계산을 확인할 수 없습니다.");
+      if (noTime && d === term.day) throw new Error("입절일에는 출생 시각에 따라 연주·월주가 달라집니다. 시간을 확인한 뒤 계산해 주세요.");
+      if (!noTime && Math.abs(d * 1440 + hour * 60 + minute - (term.day * 1440 + term.hour * 60 + term.minute)) <= 10) throw new Error("절입 전후 10분은 근사 계산 오차 범위입니다. 정밀 만세력으로 확인하기 전 계산을 보류합니다.");
       // 입춘 절입 시각(태양 황경 315°) 기준 연도 경계 판정
       const ipchun = findTermKST(y, 2);
-      const birthMinutes = d * 1440 + (hour || 0) * 60;
+      const birthMinutes = d * 1440 + (hour ?? 0) * 60 + minute;
       const termMinutes = ipchun ? ipchun.day * 1440 + ipchun.hour * 60 + ipchun.minute : (TERM_APPROX[2] * 1440);
       const afterIpchun = (m > 2) || (m === 2 && birthMinutes >= termMinutes);
       const yearNum = afterIpchun ? y : y - 1;
       const yearIdx = ((yearNum - 4) % 60 + 60) % 60;
-      const branch = monthBranch(y, m, d, hour);
+      const branch = monthBranch(y, m, d, hour, minute);
       const yearStem = yearIdx % 10;
       const monthStem = ((yearStem % 5) * 2 + 2 + ((branch - 2 + 12) % 12)) % 10;
       const monthIdx = gzIndex(monthStem, branch);
@@ -1635,16 +1691,16 @@
 
     // 수집 콘텐츠 기반 해석 사전 (일간·오행·십성 — 전통 명리 관행을 우리 문체로 재구성)
     const ILGAN_NOTE = [
-      "기준이 뚜렷하고 한번 정하면 밀고 가는 성장·추진형",
-      "상황에 유연하게 숙익는 실속·조율형",
-      "보여주고 이끌려는 표현·지도형",
-      "한번 꽂히면 끝까지 파고드는 집요·속도형",
-      "우직하게 밀어붙이는 대담·중진형",
-      "주변을 살피며 실익을 취하는 수완·중계형",
-      "결과가 뚜렷한 원칙·완주형",
-      "날카롭게 정리하는 전문·완성형",
-      "박학다식하게 흐르는 포용·연결형",
-      "속을 쉽게 드러내지 않는 통찰·전략형"
+      "甲木 — 곧게 자라는 나무에 빗대는 시작·방향의 상징",
+      "乙木 — 굽어 자라는 초목에 빗대는 적응·연결의 상징",
+      "丙火 — 넓게 비추는 햇빛에 빗대는 드러냄·확장의 상징",
+      "丁火 — 가까이 밝히는 등불에 빗대는 집중·지속의 상징",
+      "戊土 — 넓은 땅에 빗대는 기반·경계의 상징",
+      "己土 — 경작하는 흙에 빗대는 돌봄·정리의 상징",
+      "庚金 — 가공 전 금속에 빗대는 구분·변화의 상징",
+      "辛金 — 다듬은 금속에 빗대는 세부·완성의 상징",
+      "壬水 — 큰 물에 빗대는 이동·수용의 상징",
+      "癸水 — 비와 이슬에 빗대는 스며듦·연결의 상징"
     ];
     const ELEMENT_NOTE = {
       "木": "성장·확장 — 배우고 밀고 나가려는 힘",
@@ -1679,11 +1735,11 @@
         const jIdx = JI.indexOf(p.ji);
         elCount[GAN_EL[gIdx]] = (elCount[GAN_EL[gIdx]] || 0) + 1;
         elCount[JI_EL[jIdx]] = (elCount[JI_EL[jIdx]] || 0) + 1;
-        tenGods.push(tenGod(dayStem, gIdx));
+        tenGods.push(p === pillars.day ? "일간(기준)" : tenGod(dayStem, gIdx));
       });
       // 지지는 본기 오행으로 이미 가산 — 지장간은 v2.1 과제
       const groupCount = {};
-      tenGods.forEach(t => { const g = TEN_GOD_GROUPS[t]; groupCount[g] = (groupCount[g] || 0) + 1; });
+      tenGods.forEach(t => { const g = TEN_GOD_GROUPS[t]; if (g) groupCount[g] = (groupCount[g] || 0) + 1; });
       return { pillars, elCount, tenGods, groupCount, dayStem };
     }
 
@@ -1751,7 +1807,7 @@
       let sajuLine = "명식 계산 대기 중";
       let sajuPos = null;
       if (saju && saju.groupCount) {
-        sajuLine = theme.sajuGroups.map(g => saju.groupCount[g] ? `${g} ${saju.groupCount[g]}개 — ${SIPSONG_NOTE[g].split(" — ")[1]}` : `${g} 없음 — ${SIPSONG_NOTE[g].split(" — ")[1]}이 약한 구조`).join(" · ");
+        sajuLine = theme.sajuGroups.map(g => saju.groupCount[g] ? `${g} ${saju.groupCount[g]}개 — ${SIPSONG_NOTE[g].split(" — ")[1]}` : `${g} 0개 — 해당 천간 관계 없음 (능력의 강약 아님)`).join(" · ");
         sajuPos = theme.sajuGroups.some(g => (saju.groupCount[g] || 0) >= 1);
       }
       let chatPos = null;
@@ -1802,8 +1858,8 @@
     // 페르소나: 전략가 조언 톤 — 운세 확정 표현 금지, 모든 용어에 '쉽게 말해서' 해설 부착
     const JEGAL_GLOSSARY = {
       "사주팔자": "태어난 순간의 연·월·일·시 자리에 놓인 여덟 글자. 쉽게 말해서 태어난 순간의 '출발 지형도'란다.",
-      "일간": "일주 자리의 천간, 곧 나를 상징하는 글자. 쉽게 말해서 내 본체의 기질 이름이란다.",
-      "오행": "목·화·토·금·수 다섯 기운. 쉽게 말해서 성격의 다섯 지형(숲·불·벌·칼·강)이란다.",
+      "일간": "일주 자리의 천간, 곧 나를 상징하는 글자. 해석의 기준 글자이며 실제 성격을 입증하지는 않습니다.",
+      "오행": "목·화·토·금·수 다섯 기운. 전통 분류의 다섯 상징이며 성격 점수가 아닙니다.",
       "상생": "기운이 서로 돕는 관계. 쉽게 말해서 물이 나무를 키우듯 이어지는 순환이란다.",
       "십성": "일간을 기준으로 다른 글자들과의 관계를 열 이름으로 나눈 것. 쉽게 말해서 내 안의 직책 분포란다.",
       "비겁": "비견과 겁재. 쉽게 말해서 내 편이자 경쟁자인 친구들이다.",
@@ -1828,42 +1884,23 @@
       </div>`;
     }
 
-    // 상황별 관찰 문구 — 확정 표현 금지, 근거(십성·오행 개수)를 함께 표기
+    // 관찰 가능한 계산값과 상징적 질문을 분리한다. 개수는 세력·성격 점수가 아니다.
+    function elementCountReading(saju) {
+      const max = Math.max(...Object.values(saju.elCount));
+      const leaders = Object.keys(ELEMENT_NOTE).filter(k => (saju.elCount[k] || 0) === max);
+      const absent = Object.keys(ELEMENT_NOTE).filter(k => !(saju.elCount[k] || 0));
+      return `표면 글자에서는 ${leaders.join("·")}가 각각 ${max}개로 ${leaders.length > 1 ? "공동 최다" : "최다"}입니다. ${absent.length ? absent.join("·") + "는 표면 글자에서 0개입니다. 지장간까지 없다는 뜻은 아닙니다." : "다섯 오행이 표면 글자에 모두 있습니다."} 계절·뿌리·합충을 평가하지 않은 단순 개수이므로 신강·신약이나 용신을 판정하지 않습니다.`;
+    }
+
     function jegalDomainLines(saju) {
       const g = saju.groupCount;
-      const lines = [];
-      const gN = g["관성"] || 0, iN = g["인성"] || 0, sN = g["식상"] || 0, bN = g["비겁"] || 0, jN = g["재성"] || 0;
-      lines.push({
-        title: "일과 커리어",
-        body: gN + iN >= 3
-          ? "체계와 준비의 직책이 많은 구조다. 정해진 틀 안에서 완성도를 높이는 방식이 잘 맞는 편이다. (근거: 관성 " + gN + "·인성 " + iN + ")"
-          : sN >= 2
-            ? "표현의 배관이 발달한 구조다. 정해진 틀보다 만들어 내고 보여주는 방식에서 힘이 나는 편이다. (근거: 식상 " + sN + ")"
-            : "직책 분포가 고르다. 상황에 따라 체계와 표현을 오가는 편이다. (근거: 관성 " + gN + "·인성 " + iN + "·식상 " + sN + ")"
-      });
-      lines.push({
-        title: "관계",
-        body: bN >= 2
-          ? "경쟁자이자 편의 자리가 많은 구조다. 나서는 힘이 강한 만큼, 배째지 않고 역할을 나누는 약속이 관계를 편하게 만든다. (근거: 비겁 " + bN + ")"
-          : "혼자 정하고 혼자 끝내는 비중이 상대적으로 큰 구조다. 의견을 미리 말해 두면 오해가 줄어든다. (근거: 비겁 " + bN + ")"
-      });
-      lines.push({
-        title: "재물",
-        body: jN >= 2
-          ? "결과를 좇는 손이 발달한 구조다. 목표를 숫자로 쪼개 확인하는 방식이 잘 맞는 편이다. (근거: 재성 " + jN + ")"
-          : "자원의 손이 적은 구조다. 관리 규칙을 미리 정해 두는 쪽이 편하다. (근거: 재성 " + jN + ")"
-      });
-      lines.push({
-        title: "몸 관리",
-        body: "전통 관행에서는 오행의 치우침이 쓰이는 방향에 영향을 준다고 본다. " +
-          (Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] === "木" ? "목 기운이 강한 지형이니 규칙적 움직임으로 풀어 쓰는 것이 권해진다."
-            : Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] === "火" ? "화 기운이 강한 지형이니 쉬는 리듬을 미리 잡아 두는 것이 권해진다."
-            : Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] === "土" ? "토 기운이 강한 지형이니 무리한 쌓기 전에 휴식을 명문화하는 것이 권해진다."
-            : Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] === "金" ? "금 기운이 강한 지형이니 끝내기 전에 이완 절차를 두는 것이 권해진다."
-            : "수 기운이 강한 지형이니 생각이 많아질 때 몸을 먼저 움직이는 것이 권해진다.") +
-          " (근거: 최다 오행 " + Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0] + " " + Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][1] + "개)"
-      });
-      return lines;
+      const n = k => g[k] || 0;
+      return [
+        { title: "일과 선택", body: `일간을 제외한 천간에서 관성 ${n("관성")}·인성 ${n("인성")}·식상 ${n("식상")}개입니다. 전통 상징에서 각각 규칙·학습·표현을 가리킵니다. 최근 일을 하나 골라 ‘준비와 규칙이 도움이 된 지점’과 ‘직접 만들어 본 뒤 배운 지점’을 나누어 적어 보세요. 이 숫자만으로 직업 적합성을 정할 수는 없습니다.` },
+        { title: "관계와 역할", body: `비겁 ${n("비겁")}개는 일간과 같은 오행의 천간 관계를 센 값입니다. 독립성이나 경쟁심의 검사 점수가 아닙니다. 함께 일할 때 직접 맡고 싶은 역할, 위임하고 싶은 역할을 실제 대화의 근거와 비교해 보세요.` },
+        { title: "목표와 자원", body: `재성 ${n("재성")}개는 일간이 극하는 오행과의 관계입니다. 재산이나 수입을 예측하지 않습니다. 최근 목표에서 시간·돈·관계 중 무엇을 우선했는지 기록해 상징적 질문과 실제 선택을 구분해 보세요.` },
+        { title: "해석의 범위", body: elementCountReading(saju) + " 건강·질병·수명·투자 결과는 해석하지 않습니다." }
+      ];
     }
 
     function buildJegalReport(saju, mbti, tci) {
@@ -1878,15 +1915,15 @@
         html: `
           <div style="font-weight: 700; margin-bottom: 6px;">${pillarsRow}</div>
           <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">兵法에 이르기를 "나를 알고 적을 알면 백 번 싸워 위태롭지 않다" 하였다. 대화 기록은 知己(지기, 나를 앎)의 첫걸음이고, 이 여덟 글자는 또 하나의 지도다.</p>
-          <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">일간 ${p.day.gan} — ${ILGAN_NOTE[dayStem]}.</p>
+          <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">일간 ${p.day.gan} — 전통 상징: ${ILGAN_NOTE[dayStem]}. 실제 성격에 대한 판정은 아니다.</p>
           <p style="font-size: 0.82rem; color: var(--text-muted);">${gloss("사주팔자")} · ${gloss("일간")}</p>`
       });
 
       sections.push({
-        title: "2. 오행 조성 — 성격의 다섯 지형",
+        title: "2. 오행 조성 — 표면 글자 분포",
         html: `
           <div style="margin-bottom: 10px;">${Object.keys(ELEMENT_NOTE).map(el => jegalBar(el, saju.elCount[el] || 0, totalEl)).join("")}</div>
-          <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">가장 발달한 기운은 ${Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0]} — ${ELEMENT_NOTE[Object.entries(saju.elCount).sort((a, b) => b[1] - a[1])[0][0]]}이다. 강한 지형은 무기요, 약한 지형은 보완할 곳이란다.</p>
+          <p style="font-size: 0.9rem; line-height: 1.7; margin-bottom: 8px;">${elementCountReading(saju)}</p>
           <p style="font-size: 0.82rem; color: var(--text-muted);">${gloss("오행")} · ${gloss("상생")}</p>`
       });
 
@@ -1894,7 +1931,7 @@
         title: "3. 십성 구조 — 내 안의 직책 분포",
         html: `
           <div style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">
-            ${Object.keys(SIPSONG_NOTE).map(k => saju.groupCount[k] ? `<div><strong>${k} ${saju.groupCount[k]}</strong> — ${SIPSONG_NOTE[k]}</div>` : `<div style="color: var(--text-muted);">${k} 0 — ${SIPSONG_NOTE[k].split(" — ")[1]}이 상대적으로 적은 구조</div>`).join("")}
+            ${Object.keys(SIPSONG_NOTE).map(k => saju.groupCount[k] ? `<div><strong>${k} ${saju.groupCount[k]}</strong> — ${SIPSONG_NOTE[k]}</div>` : `<div style="color: var(--text-muted);">${k} 0 — ${SIPSONG_NOTE[k].split(" — ")[1]}이라는 상징에 해당하는 천간이 없음 (능력 부족을 뜻하지 않음)</div>`).join("")}
           </div>
           <p style="font-size: 0.82rem; color: var(--text-muted);">${gloss("십성")} · ${gloss("비겁")} · ${gloss("식상")} · ${gloss("재성")} · ${gloss("관성")} · ${gloss("인성")}</p>`
       });
@@ -1909,7 +1946,7 @@
           title: "4. 대화 관찰과의 대조 — 지도 두 장 겹쳐 보기",
           html: `
             <div style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">${axisLines}</div>
-            <p style="font-size: 0.9rem; line-height: 1.7;">여덟 글자의 지형과 실제 발화의 관찰이 같은 방향이면 두 관찰이 서로를 뒷받침하는 셈이고, 갈리면 그 주제가 성찰 포인트란다. 어느 쪽이 옳다 단정할 근거는 없다.</p>
+            <p style="font-size: 0.9rem; line-height: 1.7;">사주는 전통 상징, 대화는 입력된 발화에서 얻은 관찰이다. 표현이 비슷해도 서로의 정확성을 검증하지 않는다. 실제 행동을 설명할 때는 대화의 맥락과 본인의 확인을 우선하고, 서로 다른 부분은 별도로 남긴다.</p>
             <p style="font-size: 0.82rem; color: var(--text-muted);">두 지도는 서로 다른 방식의 관찰이며, 하나로 합쳐 점수 매기지 않는다.</p>`
         });
       }
@@ -1925,7 +1962,7 @@
         title: mbti ? `6. 성찰 질문 — 스스로에게 물을 세 가지` : `5. 성찰 질문 — 스스로에게 물을 세 가지`,
         html: `<ol style="font-size: 0.9rem; line-height: 1.9; padding-left: 18px;">
             <li>최근 한 달, 나는 어떤 순간에서 가장 편했는가? 그 순간이 위 지형 중 어디에 해당하는가?</li>
-            <li>관찰된 경향과 내가 아는 나 사이에 갈리는 곳은 어디인가? (갈림은 오류가 아니라 물음이다)</li>
+            <li>관찰된 경향과 내가 아는 나 사이에 갈리는 곳은 어디인가? (갈림에는 해석 오류나 맥락 차이도 있을 수 있다)</li>
             <li>이번 주에 바꿔 볼 작은 규칙 하나는 무엇인가?</li>
           </ol>
           <p style="font-size: 0.82rem; color: var(--text-muted);">완성된 답을 찾는 절차가 아니라 스스로 점검하는 질문이다${tci ? " — TCI식 응답과 겹쳐 보면 더 구체적이다" : ""}.</p>`
@@ -1934,9 +1971,9 @@
       sections.push({
         title: mbti ? `7. 인생상담 — 전략가의 조언` : `6. 인생상담 — 전략가의 조언`,
         html: `
-          <p style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">전략의 첫걸음은 억지로 고치는 것이 아니라 지형을 아는 것이다. 강한 기운은 무기로, 약한 기운은 약속으로 쓰란다 — 강한 쪽은 의도적으로 쓰고, 약한 쪽은 규칙으로 보완하라는 뜻이다.</p>
-          <p style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">대화 기록을 한 달에 한 번 다시 불러와 비교하라. 지형은 바뀌지 않아도 표현은 변한다. 변화가 데이터로 남는 것, 그것이 이 도구의 진짜 용도다.</p>
-          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">한계 고지: 본 리포트는 전통 명리 관행과 규칙 기반 관찰을 조합한 자기이해 콘텐츠다. 공식 심리검사·의학적 진단·운세 확정이 아니며, 정밀 역법(대운·연운)이 필요한 부분은 본 버전에서 의도적으로 제외했다${insightCount < 2 ? " — 대화 분석 또는 TCI 응답을 더하면 대조 절이 추가된다" : ""}.</p>`
+          <p style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">전략은 상징을 운명으로 받아들이는 데서 시작하지 않는다. 이 풀이에서 마음에 걸린 질문 하나를 고르고, 실제 경험 한 가지와 맞지 않았던 반례 한 가지를 함께 적어 보자. 행동의 선택권은 이 표가 아니라 본인에게 있다.</p>
+          <p style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">대화 기록을 한 달에 한 번 다시 불러와 비교하라. 대화의 주제·상대·기간이 다르면 결과도 달라질 수 있으니 가능한 한 비슷한 맥락끼리 비교하자. 이 도구는 원문을 저장하지 않으므로 필요한 기록은 본인이 보관해야 한다.</p>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">한계 고지: 본 리포트는 전통 명리 관행과 규칙 기반 관찰을 조합한 자기이해 콘텐츠다. 공식 심리검사·의학적 진단·운세 확정이 아니며, 대운은 근사 구간만 제시하며 지장간·신강약·용신·정밀 역법은 계산하지 않는다${insightCount < 2 ? " — 대화 분석 또는 TCI 응답을 더하면 대조 절이 추가된다" : ""}.</p>`
       });
 
       return sections;
@@ -1968,7 +2005,7 @@
     const TOSS_CLIENT_KEY = "";
     const WORKERS_URL = "";
     const STORAGE_PREMIUM_KEY = "jegal_premium_token";
-    let premiumPaid = false;
+    let premiumPaid = true; // 무료 시연본: 결제·토큰 발급 없음
 
     function getPremiumToken() {
       try {
@@ -1984,33 +2021,7 @@
 
     function renderPremiumState() {
       const gate = document.getElementById("premiumGate");
-      const status = document.getElementById("premiumStatus");
-      const btn = document.getElementById("btnPremiumPay");
-      if (!gate || !status || !btn) return;
-      const paid = premiumPaid || !!getPremiumToken();
-      if (paid) {
-        gate.style.borderColor = "#A7F3D0";
-        status.textContent = "PNG 저장이 활성화되어 있습니다. 위 리포트 요약 카드의 저장 버튼을 이용해 주세요.";
-        status.style.color = "#065F46";
-        btn.style.display = "none";
-      } else {
-        status.textContent = TOSS_CLIENT_KEY ? "결제 후 24시간 동안 PNG 저장이 가능합니다. 결제 승인은 안전하게 검증됩니다." : "실제 결제 없이 체험할 수 있습니다.";
-        status.style.color = "var(--text-muted)";
-        btn.style.display = "";
-        btn.textContent = TOSS_CLIENT_KEY ? "500원 결제 후 PNG 저장" : "상세 리포트 체험 (실제 결제 없음)";
-      }
-    }
-
-    async function confirmOnServer(paymentKey, orderId, amount) {
-      const res = await fetch(WORKERS_URL + "/payments/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentKey, orderId, amount })
-      });
-      if (!res.ok) throw new Error("서버 승인 실패: " + res.status);
-      const data = await res.json();
-      if (!data.ok) throw new Error("서버 승인 거부: " + (data.error || "unknown"));
-      return data;
+      if (gate) gate.style.display = "none";
     }
 
     function savePremiumToken(demo) {
@@ -2019,59 +2030,6 @@
       return token;
     }
 
-    function loadTossSdkAndPay() {
-      // 결제 SDK는 사용자가 결제 버튼을 누른 시점에만 동적 로딩(대화 데이터와 무관, 프라이버시 원칙 유지)
-      return new Promise((resolve, reject) => {
-        if (window.TossPayments) return resolve(window.TossPayments);
-        const sc = document.createElement("script");
-        sc.src = "https://js.tosspayments.com/v1";
-        sc.onload = () => resolve(window.TossPayments);
-        sc.onerror = () => reject(new Error("결제 SDK 로딩 실패"));
-        document.head.appendChild(sc);
-      });
-    }
-
-    if (document.getElementById("btnPremiumPay")) {
-      document.getElementById("btnPremiumPay").addEventListener("click", async () => {
-        if (TOSS_CLIENT_KEY && !WORKERS_URL || !TOSS_CLIENT_KEY && WORKERS_URL) {
-          alert("설정 오류: 실결제는 클라이언트 키와 Workers URL이 모두 필요합니다. 데모 모드로는 진행하지 않습니다.");
-          return;
-        }
-        if (TOSS_CLIENT_KEY && WORKERS_URL) {
-          try {
-            const TossPayments = await loadTossSdkAndPay();
-            const orderId = "JEGAL_" + Date.now();
-            await TossPayments(TOSS_CLIENT_KEY).requestPayment("카드", {
-              amount: 500,
-              orderId,
-              orderName: "멘탈제갈량 상세 리포트",
-              successUrl: location.origin + location.pathname + "?payment=success&orderId=" + orderId,
-              failUrl: location.origin + location.pathname + "?payment=fail"
-            });
-          } catch (err) {
-            alert("결제 시작 실패: " + (err.message || err));
-          }
-          return;
-        }
-        // 데모 모드(키 미주입) — 실결제 아님을 명시
-        premiumPaid = true;
-        savePremiumToken(true);
-        renderPremiumState();
-        alert("체험 모드: 실제 결제 없이 PNG 저장이 활성화됐습니다.");
-      });
-    }
-    // 결제 리다이렉트 복귀: 서버 confirm 결과가 있어야만 열람권 발급(성공 쿼리만으로 발급 금지)
-    try {
-      const qs = new URLSearchParams(location.search);
-      if (qs.get("payment") === "success" && qs.get("paymentKey") && qs.get("orderId") && WORKERS_URL) {
-        confirmOnServer(qs.get("paymentKey"), qs.get("orderId"), 500)
-          .then(() => { premiumPaid = true; savePremiumToken(false); renderPremiumState(); alert("결제가 승인되어 상세 리포트 저장이 활성화됩니다."); })
-          .catch(e => alert("서버 승인 검증 실패: " + e.message));
-      } else if (qs.get("payment") === "success") {
-        const st = document.getElementById("premiumStatus");
-        if (st) st.textContent = "결제 리다이렉트 도착 — 승인 서버 설정 후 열람권이 발급됩니다.";
-      }
-    } catch (e) {}
     renderPremiumState();
 
     function openJegalReport() {
@@ -2110,14 +2068,28 @@
           }
         } else {
           oneShotPending = true;
+          if (sajuDone) openJegalReport();
           const tr = document.getElementById("tciResult");
-          if (tr) tr.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted);\">TCI 12문항만 답하면 채점·3소스 비교가 자동으로 이어집니다" + (sajuDone ? "(제갈량 리포트 포함)." : ".") + "</p>";
-          document.getElementById("tciQuestions").scrollIntoView({ behavior: "smooth" });
+          if (tr) tr.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted);\">TCI 12문항만 답하면 채점·3소스 비교가 자동으로 이어집니다" + (sajuDone ? "(사주 리포트는 지금 바로 아래에서 볼 수 있습니다)." : ".") + "</p>";
+          if (!sajuDone) document.getElementById("tciQuestions").scrollIntoView({ behavior: "smooth" });
         }
       });
     }
 
     const v2State = { saju: null, tci: null, mbti: null, daewun: null };
+    function invalidateBirthResults() {
+      v2State.saju = null; v2State.daewun = null; v2State.birthY = null;
+      jegalState.sections = null; jegalState.shown = 0;
+      ["sajuResult", "daewunResult", "jegalReportBox"].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ""; });
+      const report = document.getElementById("reportSection");
+      if (report) report.style.display = "none";
+      renderFusionIfReady();
+    }
+    ["v2BirthDate", "v2BirthTime", "v2NoTime", "v2Gender"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.addEventListener("input", invalidateBirthResults); el.addEventListener("change", invalidateBirthResults); }
+    });
+
 
     function renderSaju(pillars) {
       const box = document.getElementById("sajuResult");
@@ -2146,11 +2118,11 @@
       Object.keys(summary.groupCount).forEach(g => {
         if (summary.groupCount[g] >= 2) notes += `<div>${g}(${summary.groupCount[g]}개) — ${SIPSONG_NOTE[g]}</div>`;
       });
-      if (!notes) notes = "<div>특정 기운이 크게 몰려 있지 않은 균형 구조입니다.</div>";
+      notes += `<div>${elementCountReading(summary)}</div><div>일간은 기준이므로 십성 집계에서 제외합니다. 지장간·월령·합충 해석은 포함하지 않습니다. ${pillars.hour ? "0시 일자 경계·현행 KST 기준입니다." : "시간 미상: 시주와 대운을 계산하지 않았습니다."}</div>`;
       box.innerHTML = `
         <div style="border: 1px solid var(--border); border-radius: var(--radius-inner); padding: 14px 16px;">
           <div style="font-weight: 700; margin-bottom: 8px;">명식 — ${pillarsRow}</div>
-          <div style="margin-bottom: 10px;">일간 ${pillars.day.gan}: ${ILGAN_NOTE[dayStem]}</div>
+          <div style="margin-bottom: 10px;">일간 ${pillars.day.gan}의 전통 상징: ${ILGAN_NOTE[dayStem]} (성격 판정 아님)</div>
           <div style="margin-bottom: 10px;">${elBars}</div>
           <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 8px;">${tenGodLines}</div>
           <div style="font-size: 0.88rem; line-height: 1.7;">${notes}</div>
@@ -2184,14 +2156,22 @@
     }
 
     function calcSajuFromInputs() {
+      v2State.saju = null; v2State.daewun = null; v2State.birthY = null;
+      jegalState.sections = null; jegalState.shown = 0;
+      ["sajuResult", "daewunResult", "jegalReportBox"].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ""; });
+      renderFusionIfReady();
       const dv = document.getElementById("v2BirthDate").value;
       const tv = document.getElementById("v2BirthTime").value;
       const noTime = document.getElementById("v2NoTime").checked;
       if (!dv) { alert("생년월일을 먼저 입력해주세요."); return false; }
       const parts = dv.split("-").map(Number);
+      if (parts[0] < 1989 || dv > new Date().toISOString().slice(0, 10)) { alert("역사적 표준시·서머타임 보정 미지원으로 1989년 이후의 과거 양력 출생일만 지원합니다."); return false; }
       let hour = null;
       if (!noTime && tv) hour = parseInt(tv.split(":")[0], 10);
-      const pillars = calcPillars(parts[0], parts[1], parts[2], hour, noTime || !tv);
+      let pillars;
+      const minute = (!noTime && tv) ? Number(tv.split(":")[1]) : 0;
+      try { pillars = calcPillars(parts[0], parts[1], parts[2], hour, noTime || !tv, minute); }
+      catch (err) { v2State.saju = null; v2State.daewun = null; document.getElementById("sajuResult").textContent = err.message; document.getElementById("daewunResult").innerHTML = ""; alert(err.message); return false; }
       v2State.saju = sajuSummary(pillars);
       renderSaju(pillars);
       const minuteOf = (!noTime && tv) ? parseInt(tv.split(":")[1], 10) : 0;
@@ -2210,6 +2190,7 @@
     }
     // 대운·연운 — ruleVersion v2.1-termlong(정밀 절기 기반 대운수)
     function calcDaewun(pillars, birthY, birthM, birthD, gender, birthHour, birthMin) {
+      if (!pillars.hour || birthHour === null || birthHour === undefined) return null;
       const yearGan = pillars.year.gz % 10;
       const yangYear = yearGan % 2 === 0; // 甲丙戊庚壬 = 양간
       const forward = (gender === "M" || gender === "F") ? ((yangYear && gender === "M") || (!yangYear && gender === "F")) : null;
@@ -2374,47 +2355,18 @@
       }
     }
 
-    function checkPaywallUnlocked() {
-      // 실결제 키 주입 모드에서는 클라이언트 데모 토큰을 인정하지 않는다 — 서버 승인 기반 토큰만 유효
-      if (TOSS_PAYMENTS_CLIENT_KEY) return false;
-      const token = getPaywallToken();
-      return token !== null && token.unlocked === true;
-    }
+    function checkPaywallUnlocked() { return true; } // 무료·로그인 없는 시연본
 
     // 페이월 UI 렌더링
     function renderPaywallUI(mbti) {
-      const isUnlocked = checkPaywallUnlocked();
-      if (!paywallLockedView || !paywallUnlockedView) return;
-
-      if (paywallDemoBadge) {
-        paywallDemoBadge.style.display = TOSS_PAYMENTS_CLIENT_KEY ? "none" : "inline-block";
-      }
-      const demoNotice = document.getElementById("paywallDemoNotice");
-      if (demoNotice) {
-        demoNotice.style.display = TOSS_PAYMENTS_CLIENT_KEY ? "none" : "block";
-      }
-      if (btnUnlockPaywall) {
-        btnUnlockPaywall.textContent = TOSS_PAYMENTS_CLIENT_KEY
-          ? "🔓 500원 결제하고 종합 결과 보기"
-          : "🔓 데모로 종합 화면 미리보기 — 실제 결제 없음";
-      }
-
-      if (isUnlocked) {
-        paywallLockedView.style.display = "none";
-        paywallUnlockedView.style.display = "block";
-        const token = getPaywallToken();
-        if (token && paywallExpiryNotice) {
-          const remainingHours = Math.max(0, Math.round((token.expiresAt - Date.now()) / (1000 * 60 * 60)));
-          paywallExpiryNotice.textContent = `(남은 유효 시간: 약 ${remainingHours}시간)`;
-        }
-        if (deepMbtiAnalysisBox && mbti) {
-          renderDeepMbtiAnalysis(deepMbtiAnalysisBox, mbti);
-        }
-      } else {
-        paywallLockedView.style.display = "block";
-        paywallUnlockedView.style.display = "none";
-        if (deepMbtiAnalysisBox) deepMbtiAnalysisBox.innerHTML = "";
-      }
+      if (paywallLockedView) paywallLockedView.style.display = "none";
+      if (paywallUnlockedView) paywallUnlockedView.style.display = "block";
+      if (btnUnlockPaywall) btnUnlockPaywall.style.display = "none";
+      if (paywallDemoBadge) paywallDemoBadge.style.display = "none";
+      if (paywallExpiryNotice) paywallExpiryNotice.textContent = "무료 시연 · 결제 및 로그인 없음";
+      const notice = document.getElementById("paywallDemoNotice");
+      if (notice) notice.style.display = "none";
+      if (deepMbtiAnalysisBox && mbti) renderDeepMbtiAnalysis(deepMbtiAnalysisBox, mbti);
     }
 
     // 심층 MBTI 4축 해석 & 소통 전략 렌더링 (실명 완전 마스킹 유지)
@@ -2467,10 +2419,10 @@
       if (file.size > MAX_FILE_SIZE) {
         return { ok: false, reason: "1MB를 초과하는 파일은 업로드할 수 없습니다." };
       }
-      const nameOk = typeof file.name === "string" && file.name.toLowerCase().endsWith(".txt");
-      const typeOk = typeof file.type === "string" && (file.type === "text/plain" || file.type === "");
+      const nameOk = typeof file.name === "string" && (file.name.toLowerCase().endsWith(".txt") || file.name.toLowerCase().endsWith(".csv"));
+      const typeOk = typeof file.type === "string" && (["text/plain", "text/csv", "application/csv", "application/vnd.ms-excel", ""].includes(file.type));
       if (!nameOk || !typeOk) {
-        return { ok: false, reason: "텍스트(.txt) 파일만 업로드할 수 있습니다." };
+        return { ok: false, reason: "텍스트(.txt) 또는 CSV(.csv) 파일만 불러올 수 있습니다." };
       }
       if (file.size === 0) {
         return { ok: false, reason: "빈 파일은 업로드할 수 없습니다." };
@@ -2488,11 +2440,17 @@
 
       selectedSpeaker = "";
       resetAnalysisState();
+      const isCsv = typeof file.name === "string" && file.name.toLowerCase().endsWith(".csv");
 
       if (typeof FileReader !== "undefined") {
         const reader = new FileReader();
         reader.onload = function(e) {
-          const text = (e.target && e.target.result) || "";
+          let text = (e.target && e.target.result) || "";
+          if (isCsv) {
+            const converted = csvToChatText(text);
+            if (converted) text = converted;
+            else { alert("CSV에서 화자·내용 열을 찾지 못했습니다. 열 이름에 '화자' 또는 '이름'이 포함되어야 합니다."); return; }
+          }
           rawChatInput.value = text;
           onChatTextChange();
         };
@@ -2600,14 +2558,6 @@
       resetAnalysisState();
     });
 
-    // 파일 불러오기 label 클릭 시 명시적으로 파일 선택창 호출 (label-for 미동작 브라우저 대응)
-    const chatFileInputLabel = document.getElementById("chatFileInputLabel");
-    if (chatFileInputLabel) {
-      chatFileInputLabel.addEventListener("click", (e) => {
-        e.preventDefault();
-        chatFileInput.click();
-      });
-    }
     if (chatFileInput) {
       chatFileInput.addEventListener("change", (e) => {
         const file = e.target.files && e.target.files[0];
@@ -2627,47 +2577,9 @@
 
     btnAnalyze.addEventListener("click", runAnalysis);
 
-    if (btnUnlockPaywall) {
-      btnUnlockPaywall.addEventListener("click", () => {
-        if (TOSS_PAYMENTS_CLIENT_KEY) {
-          // 실제 토스페이먼츠 연동 분기 — 키가 설정되어 있으면 데모 폴백 금지(결제 우회 방지)
-          if (typeof window !== "undefined" && typeof window.TossPayments === "function") {
-            const tossPayments = window.TossPayments(TOSS_PAYMENTS_CLIENT_KEY);
-            tossPayments.requestPayment("카드", {
-              amount: PAYWALL_PRICE,
-              orderId: "ORDER_" + Date.now(),
-              orderName: "MBTI+사주 종합 결과 보기",
-              successUrl: window.location.href.split("?")[0] + "?payment=success",
-              failUrl: window.location.href.split("?")[0] + "?payment=fail"
-            }).catch(err => alert("결제 실패: " + err.message));
-            return;
-          }
-          // 키가 있지만 SDK 미로딩: 결제 없이 유료 콘텐츠를 열어주지 않는다
-          alert("결제 연동 오류: 결제 SDK가 아직 로딩되지 않았습니다. 페이지를 새로고침한 뒤 다시 시도해주세요.");
-          return;
-        }
-
-        // 데모 모드 분기 (TOSS_PAYMENTS_CLIENT_KEY가 비어 있을 때만 도달)
-        savePaywallToken();
-        if (parsedData) {
-          const targetMsgs = parsedData.messages.filter(m => m.isTarget);
-          const metrics = calculateMetrics(parsedData.messages);
-          const mbti = scoreMBTI(targetMsgs, metrics);
-          renderPaywallUI(mbti);
-        } else {
-          renderPaywallUI(null);
-        }
-        alert("데모 모드: 500원 결제가 시뮬레이션되어 'MBTI+사주 종합 결과 보기'가 24시간 동안 잠금 해제되었습니다.\n(데모 토큰은 브라우저에만 저장되며 실제 결제 증빙이 아닙니다)");
-      });
-    }
-
     btnDownloadCard.addEventListener("click", () => {
       if (!(v2State.saju && v2State.daewun)) {
         alert("먼저 대화 분석과 명식 계산을 완료해 주세요.\n생년월일 입력 후 '명식 계산'을 누르면 사주·대운이 표에 추가됩니다.");
-        return;
-      }
-      if (!(premiumPaid || getPremiumToken())) {
-        alert("상세 리포트(PNG) 저장은 500원 결제 후 이용할 수 있습니다.\n아래 '멘탈제갈량 상세 리포트' 카드에서 결제해주세요. (데모 모드에서는 무료 미리보기)");
         return;
       }
       if (!shareCanvas) return;
@@ -3051,6 +2963,7 @@
       globalThis.tenGod = tenGod;
       globalThis.TCI_QUESTIONS = TCI_QUESTIONS;
       globalThis.tciScore = tciScore;
+      globalThis.csvToChatText = csvToChatText;
       globalThis.calcDaewun = calcDaewun;
       globalThis.getPremiumToken = getPremiumToken;
       globalThis.savePremiumToken = savePremiumToken;
@@ -3090,6 +3003,7 @@
         tenGod,
         TCI_QUESTIONS,
         tciScore,
+        csvToChatText,
         calcDaewun,
         getPremiumToken,
         savePremiumToken,

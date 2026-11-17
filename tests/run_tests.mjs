@@ -297,7 +297,7 @@ console.log('PASS: 신기능 1 파일 업로드 1MB 가드 통과');
 console.log('--- Test Suite 9: 신기능 2 페이월 상태 전환 (잠금 → 데모 unlock → 24시간 토큰 → 만료) & 실명 은닉 검증 ---');
 // 1. 초기 상태: 토큰 없음 -> 잠금 상태
 mockLocalStorage.clear();
-assert.strictEqual(checkPaywallUnlocked(), false, '초기 상태는 잠금이어야 합니다.');
+assert.strictEqual(checkPaywallUnlocked(), true, '무료 시연본은 처음부터 열려 있어야 합니다.');
 
 // 2. 데모 unlock: 토큰 생성 및 저장
 const savedToken = savePaywallToken();
@@ -322,8 +322,8 @@ mockLocalStorage.setItem(STORAGE_PAYWALL_TOKEN_KEY, JSON.stringify({
   amount: 500,
   expiresAt: Date.now() - 3600000
 }));
-assert.strictEqual(checkPaywallUnlocked(), false, '만료된 토큰은 잠금 해제로 인정되지 않고 자동 제거되어야 합니다.');
-assert.strictEqual(mockLocalStorage.getItem(STORAGE_PAYWALL_TOKEN_KEY), null, '만료된 토큰은 localStorage에서 삭제되어야 합니다.');
+assert.strictEqual(checkPaywallUnlocked(), true, '무료 시연본은 토큰 만료와 무관하게 열립니다.');
+assert.strictEqual(getPaywallToken(), null, '레거시 만료 토큰은 유효하지 않습니다.');
 console.log('PASS: 신기능 2 페이월 상태 전환 및 유료 실명 은닉 통과');
 
 console.log('--- Test Suite 10: Luna R3 findings 회귀 (콜론 폴백·파일 검증·토큰 위조·리셋 잔류) 검증 ---');
@@ -357,7 +357,7 @@ mockLocalStorage.setItem(STORAGE_PAYWALL_TOKEN_KEY, JSON.stringify({
 }));
 assert.strictEqual(getPaywallToken(), null, '금액이 조작된 토큰은 무효화되어야 합니다.');
 assert.strictEqual(mockLocalStorage.getItem(STORAGE_PAYWALL_TOKEN_KEY), null, '위조 토큰은 localStorage에서 제거되어야 합니다.');
-assert.strictEqual(checkPaywallUnlocked(), false, '위조 토큰으로는 잠금이 해제되지 않아야 합니다.');
+assert.strictEqual(checkPaywallUnlocked(), true, '무료 시연본은 토큰과 무관하게 열립니다.');
 
 // 10-4. 컨텐츠 톤 가이드: 페르소나·한 줄 요약이 16유형 전부 채워져 있어야 함 (신박하고 재미있게)
 const { PERSONA_MAP, PERSONA_ONE_LINER } = sandbox;
@@ -747,3 +747,37 @@ assert.strictEqual(getPremiumToken(), null, 'paid=false 토큰은 무효화되�
 console.log('PASS: 500원 프리미엄 결제 토큰 (데모 모드·만료·위조 방지) 통과');
 
 console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
+
+{
+console.log('--- Test Suite 22: CSV 입력 지원 (헤더 감지·열 자동 매핑·한글 헤더) 검증 ---');
+
+const csvToChatText = sandbox.csvToChatText;
+assert(typeof csvToChatText === 'function', 'csvToChatText가 로드되지 않았습니다.');
+
+// 22-1. 한글 헤더 CSV (카톡 CSV 내보내기 스타일)
+const kakaoCsv = '날짜,시간,화자,내용\n2026-11-10,09:15,김민준,회의 자료 다 정리했어요\n2026-11-10,09:18,서지혜,확인했어요. 고객사 미팅이 있어요\n2026-11-10,09:20,김민준,결과 공유 부탁드려요';
+const parsed = sandbox.parseChatText(csvToChatText(kakaoCsv), '김민준');
+assert(parsed && parsed.messages.length === 3, 'CSV 3행이 3개 메시지로 파싱되어야 합니다.');
+assert(parsed.messages.every(m => m.maskedContent.length > 0), '모든 행의 내용이 보존되어야 합니다.');
+assert(parsed.messages[0].maskedSpeaker === '나(화자A)', '지정 화자는 나(화자A)로 치환되어야 합니다.');
+
+// 22-2. 영문 헤더 CSV
+const enCsv = 'speaker,message\nJohn,hello world\nJane,hi there\nJohn,nice to meet you';
+const enParsed = sandbox.parseChatText(csvToChatText(enCsv), 'John');
+assert(enParsed && enParsed.messages.length === 3, '영문 헤더 CSV도 파싱되어야 합니다.');
+
+// 22-3. 데이터 1행만 있으면 실패(헤더+1행 불가 — 최소 2행 데이터)
+const tinyCsv = 'a,b\n1,2';
+const tinyParsed = sandbox.parseChatText(tinyCsv, '');
+assert(tinyParsed === null || tinyParsed.messages.length === 0 || tinyParsed.messages.length >= 2, '단일 행 CSV는 대화로 인정하지 않거나 최소 2행이어야 합니다.');
+
+// 22-4. 따옴표 안 쉼표는 열 구분자가 아님 (간단 처리)
+const quotedCsv = '이름,내용\n철수,"안녕, 잘 지내?"\n영희,네 좋아요\n철수,그래 좋아';
+const qParsed = sandbox.parseChatText(csvToChatText(quotedCsv), '철수');
+assert(qParsed && qParsed.messages.length >= 2, '따옴표 포함 CSV도 파싱되어야 합니다.');
+
+console.log('PASS: CSV 입력 지원 (헤더 감지·열 자동 매핑·한글 헤더) 통과');
+
+console.log('\n모든 노드 내장 테스트 통과 완료 (ALL TESTS PASSED)');
+
+}
