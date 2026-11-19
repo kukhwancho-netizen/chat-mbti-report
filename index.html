@@ -1,28 +1,206 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <script id="themeBoot">
+(function () {
+  var KEY = 'jpjg_theme';
+  var MODES = ['auto', 'light', 'dark'];
+  var LABELS = { auto: '자동', light: '라이트', dark: '다크' };
+  var NEXT_LABELS = { auto: '라이트', light: '다크', dark: '자동' };
+  var root = document.documentElement;
+
+  function readTheme() {
+    try {
+      var saved = window.localStorage.getItem(KEY);
+      return MODES.indexOf(saved) !== -1 ? saved : 'auto';
+    } catch (e) {
+      return 'auto';
+    }
+  }
+
+  function saveTheme(mode) {
+    try {
+      window.localStorage.setItem(KEY, mode);
+    } catch (e) {}
+  }
+
+  function applyTheme(mode) {
+    if (mode === 'light' || mode === 'dark') {
+      root.setAttribute('data-theme', mode);
+    } else {
+      root.removeAttribute('data-theme');
+    }
+  }
+
+  function syncButton(btn, mode) {
+    if (!btn) return;
+    btn.setAttribute('data-mode', mode);
+    btn.setAttribute(
+      'aria-label',
+      '테마 전환 (현재: ' + LABELS[mode] + ', 누르면 ' + NEXT_LABELS[mode] + ' 모드로 변경)'
+    );
+    btn.textContent = '테마: ' + LABELS[mode];
+  }
+
+  var current = readTheme();
+  applyTheme(current);
+
+  function init() {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    syncButton(btn, current);
+    btn.addEventListener('click', function () {
+      current = MODES[(MODES.indexOf(current) + 1) % MODES.length];
+      applyTheme(current);
+      saveTheme(current);
+      syncButton(btn, current);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>지피지기 백전백승 — 대화 기반 MBTI 자기이해 리포트</title>
   <style>
-    :root {
-      /* GPT 디자인 자문 스펙: 웜 뉴트럴 라이트 + 바이올렛 단일 포인트 */
+    :root,
+    :root[data-theme="light"] {
+      color-scheme: light;
+      /* 라이트 팔레트 (WCAG AA 4.5:1 이상) */
       --primary: #1D4ED8;
       --primary-hover: #1E40AF;
       --primary-light: #EEF3FF;
+      --primary-contrast: #FFFFFF;
       --bg: #F5F6F8;
       --card-bg: #FFFFFF;
       --text-main: #182230;
+      --text-secondary: #334155;
       --text-muted: #526174;
       --border: #D9E0E8;
       --surface-muted: #F0F3F7;
+      --surface-subtle: #F8FAFC;
       --input-bg: #FFFFFF;
+      --textarea-bg: #FAFAFA;
       --accent: #D9E0E8;
       --danger: #B91C1C;
+      --notice-text: #166534;
+      --notice-strong: #14532D;
+      --btn-secondary-bg: #F1F5F9;
+      --btn-secondary-hover: #E2E8F0;
+      --btn-secondary-text: #334155;
+      --report-bg-start: #EEF2FF;
+      --report-bg-end: #E0E7FF;
+      --badge-shadow: 0 2px 4px rgba(79, 70, 229, 0.15);
+      --persona-text: #1E1B4B;
+      --target-info-text: #4338CA;
+      --bar-track: #E2E8F0;
+      --status-ok-bg: #DCFCE7;
+      --status-ok-text: #166534;
+      --status-lack-bg: #FEE2E2;
+      --status-lack-text: #B91C1C;
+      --v2-tag-bg: #FFFFFF;
+      --v2-tag-text: #7E22CE;
+      --v2-tag-border: #D8B4FE;
+      --canvas-bg: #FFFFFF;
+      --focus-ring: #1D4ED8;
       --radius: 12px;
       --radius-inner: 10px;
       --shadow: none;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.02);
       --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.06);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --primary: #60A5FA;
+        --primary-hover: #93C5FD;
+        --primary-light: #172554;
+        --primary-contrast: #0B1120;
+        --bg: #0B1120;
+        --card-bg: #111827;
+        --text-main: #F1F5F9;
+        --text-secondary: #CBD5E1;
+        --text-muted: #94A3B8;
+        --border: #2D3A4F;
+        --surface-muted: #1E293B;
+        --surface-subtle: #172033;
+        --input-bg: #0F172A;
+        --textarea-bg: #0F172A;
+        --accent: #475569;
+        --danger: #F87171;
+        --notice-text: #86EFAC;
+        --notice-strong: #BBF7D0;
+        --btn-secondary-bg: #1E293B;
+        --btn-secondary-hover: #334155;
+        --btn-secondary-text: #E2E8F0;
+        --report-bg-start: #172038;
+        --report-bg-end: #1E294B;
+        --badge-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+        --persona-text: #E0E7FF;
+        --target-info-text: #A5B4FC;
+        --bar-track: #334155;
+        --status-ok-bg: #14532D;
+        --status-ok-text: #BBF7D0;
+        --status-lack-bg: #450A0A;
+        --status-lack-text: #FECACA;
+        --v2-tag-bg: #2E1065;
+        --v2-tag-text: #E9D5FF;
+        --v2-tag-border: #6B21A8;
+        --canvas-bg: #111827;
+        --focus-ring: #93C5FD;
+        --shadow: none;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+        --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --primary: #60A5FA;
+      --primary-hover: #93C5FD;
+      --primary-light: #172554;
+      --primary-contrast: #0B1120;
+      --bg: #0B1120;
+      --card-bg: #111827;
+      --text-main: #F1F5F9;
+      --text-secondary: #CBD5E1;
+      --text-muted: #94A3B8;
+      --border: #2D3A4F;
+      --surface-muted: #1E293B;
+      --surface-subtle: #172033;
+      --input-bg: #0F172A;
+      --textarea-bg: #0F172A;
+      --accent: #475569;
+      --danger: #F87171;
+      --notice-text: #86EFAC;
+      --notice-strong: #BBF7D0;
+      --btn-secondary-bg: #1E293B;
+      --btn-secondary-hover: #334155;
+      --btn-secondary-text: #E2E8F0;
+      --report-bg-start: #172038;
+      --report-bg-end: #1E294B;
+      --badge-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+      --persona-text: #E0E7FF;
+      --target-info-text: #A5B4FC;
+      --bar-track: #334155;
+      --status-ok-bg: #14532D;
+      --status-ok-text: #BBF7D0;
+      --status-lack-bg: #450A0A;
+      --status-lack-text: #FECACA;
+      --v2-tag-bg: #2E1065;
+      --v2-tag-text: #E9D5FF;
+      --v2-tag-border: #6B21A8;
+      --canvas-bg: #111827;
+      --focus-ring: #93C5FD;
+      --shadow: none;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+      --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.4);
     }
 
     * {
@@ -32,27 +210,70 @@
       font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
+    html,
+    body {
+      max-width: 100%;
+      overflow-x: clip;
+    }
+
     body {
       background-color: var(--bg);
       color: var(--text-main);
       line-height: 1.6;
       padding: 24px 16px 60px;
+      overflow-wrap: anywhere;
     }
 
     .container {
+      width: 100%;
       max-width: 1120px;
       margin: 0 auto;
       padding: 0 16px;
+      min-width: 0;
+    }
+
+    /* 접근성 포커스 외곽선 */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    /* 우상단 테마 토글 */
+    #themeToggle {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 8px 14px;
+      background-color: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    #themeToggle:hover {
+      background-color: var(--surface-muted);
     }
 
     /* 헤더 및 안내문 */
     header {
       text-align: center;
       margin-bottom: 24px;
-      padding-top: 24px;
+      padding-top: 40px;
       max-width: 840px;
       margin-left: auto;
       margin-right: auto;
+      min-width: 0;
     }
 
     .brand-name {
@@ -66,14 +287,56 @@
     h1 {
       font-size: 32px;
       line-height: 42px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      color: var(--text-main);
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .hero-story {
+      max-width: 560px;
+      margin: 14px auto 16px;
+      padding: 14px 16px;
+      background-color: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-inner);
+      text-align: center;
+      min-width: 0;
+    }
+
+    .hero-story-line {
+      font-size: 0.95rem;
+      line-height: 1.55;
+      font-weight: 600;
+      color: var(--text-main);
+      word-break: keep-all;
+    }
+
+    .hero-story-catch {
+      font-size: 1.05rem;
+      line-height: 1.45;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 4px;
+    }
+
+    .hero-story-note {
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+      margin-top: 8px;
     }
 
     .subtitle {
       font-size: 16px;
       line-height: 28px;
+      color: var(--text-muted);
+      word-break: keep-all;
     }
 
-    .hero .input-focus-area {
+    .hero .input-focus-area:focus:not(:focus-visible) {
       outline: none;
     }
 
@@ -88,27 +351,21 @@
       margin-bottom: 8px;
     }
 
-    h1 {
-      font-size: 32px;
-      line-height: 42px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 12px;
-    }
-
-
-
     /* 공지 배너 */
     .v2-input-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr minmax(110px, auto) auto minmax(110px, auto);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(110px, auto) auto minmax(110px, auto);
       gap: 8px;
       margin-bottom: 8px;
     }
 
+    .v2-input-grid > * {
+      min-width: 0;
+    }
+
     @media (max-width: 768px) {
       .v2-input-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .v2-input-grid button {
         width: 100%;
@@ -157,6 +414,7 @@
       font-size: 0.9rem;
       line-height: 1.55;
       color: var(--text-main);
+      min-width: 0;
     }
 
     .notice-item {
@@ -164,11 +422,12 @@
       align-items: flex-start;
       gap: 10px;
       font-size: 0.88rem;
-      color: #166534;
+      color: var(--notice-text);
+      min-width: 0;
     }
 
     .notice-item strong {
-      color: #14532D;
+      color: var(--notice-strong);
       white-space: nowrap;
     }
 
@@ -180,6 +439,7 @@
       padding: 28px;
       margin-bottom: 24px;
       box-shadow: var(--shadow);
+      min-width: 0;
     }
 
     .card-title {
@@ -189,28 +449,36 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--text-main);
     }
 
     /* 입력 영역 */
     textarea {
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
       height: 240px;
       padding: 14px;
       font-size: 0.95rem;
       line-height: 1.6;
       border: 1px solid var(--border);
       border-radius: var(--radius-inner);
-      background: var(--input-bg);
+      background-color: var(--textarea-bg);
+      color: var(--text-main);
       resize: vertical;
-      outline: none;
-      transition: border-color 0.2s;
-      background-color: #FAFAFA;
+      transition: border-color 0.2s, background-color 0.2s;
       font-family: monospace;
     }
 
     textarea:focus {
       border-color: var(--primary);
-      background-color: #FFFFFF;
+      background-color: var(--input-bg);
+    }
+
+    textarea:focus:not(:focus-visible) {
+      outline: none;
     }
 
     .btn-row {
@@ -224,18 +492,22 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 0.9rem;
+      min-height: 44px;
+      min-width: 44px;
       padding: 10px 18px;
       border-radius: 8px;
       border: none;
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
+      max-width: 100%;
     }
 
     .btn-primary {
       background-color: var(--primary);
-      color: #FFFFFF;
+      color: var(--primary-contrast);
       font-weight: 600;
       border-radius: 8px;
     }
@@ -244,12 +516,12 @@
     }
 
     .btn-secondary {
-      background-color: #F1F5F9;
-      color: #334155;
+      background-color: var(--btn-secondary-bg);
+      color: var(--btn-secondary-text);
       border: 1px solid var(--border);
     }
     .btn-secondary:hover {
-      background-color: #E2E8F0;
+      background-color: var(--btn-secondary-hover);
     }
 
     .btn-outline {
@@ -264,7 +536,7 @@
     /* 설정 영역: 화자 선택 등 */
     .settings-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
       gap: 16px;
       margin-top: 16px;
       padding-top: 16px;
@@ -275,6 +547,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      min-width: 0;
     }
 
     .form-label {
@@ -283,12 +556,23 @@
       color: var(--text-muted);
     }
 
-    select {
+    select,
+    input[type="text"],
+    input[type="number"],
+    input[type="date"] {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      min-height: 44px;
       padding: 9px 12px;
       border-radius: 8px;
       border: 1px solid var(--border);
-      background-color: #FFFFFF;
+      background-color: var(--input-bg);
+      color: var(--text-main);
       font-size: 0.9rem;
+    }
+
+    select:focus:not(:focus-visible) {
       outline: none;
     }
 
@@ -296,9 +580,10 @@
     .report-header {
       text-align: center;
       padding: 24px;
-      background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+      background: linear-gradient(135deg, var(--report-bg-start) 0%, var(--report-bg-end) 100%);
       border-radius: var(--radius);
       margin-bottom: 24px;
+      min-width: 0;
     }
 
     .mbti-type-badge {
@@ -307,19 +592,19 @@
       font-weight: 900;
       letter-spacing: 0.05em;
       color: var(--primary);
-      text-shadow: 0 2px 4px rgba(79, 70, 229, 0.15);
+      text-shadow: var(--badge-shadow);
     }
 
     .mbti-persona {
       font-size: 1.25rem;
       font-weight: 700;
-      color: #1E1B4B;
+      color: var(--persona-text);
       margin-top: 4px;
     }
 
     .mbti-target-info {
       font-size: 0.9rem;
-      color: #4338CA;
+      color: var(--target-info-text);
       margin-top: 6px;
     }
 
@@ -329,6 +614,7 @@
       flex-direction: column;
       gap: 16px;
       margin: 24px 0;
+      min-width: 0;
     }
 
     .axis-card {
@@ -337,19 +623,22 @@
       border-bottom: 1px solid var(--border);
       border-radius: 0;
       padding: 8px 0;
+      min-width: 0;
     }
 
     .axis-labels {
       display: flex;
       justify-content: space-between;
+      gap: 8px;
       font-size: 0.9rem;
       font-weight: 700;
       margin-bottom: 6px;
+      color: var(--text-main);
     }
 
     .axis-ratio-bar-wrapper {
       height: 12px;
-      background: #E2E8F0;
+      background: var(--bar-track);
       border-radius: 999px;
       overflow: hidden;
       display: flex;
@@ -368,6 +657,8 @@
     .axis-meta {
       display: flex;
       justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
       font-size: 0.75rem;
       color: var(--text-muted);
       margin-top: 4px;
@@ -379,18 +670,18 @@
       color: var(--text-muted);
     }
     .status-ok {
-      background: #DCFCE7;
-      color: #15803D;
+      background: var(--status-ok-bg);
+      color: var(--status-ok-text);
     }
     .status-lack {
-      background: #FEE2E2;
-      color: #B91C1C;
+      background: var(--status-lack-bg);
+      color: var(--status-lack-text);
     }
 
     /* 정량 지표 패널 */
     .metric-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
 
@@ -399,11 +690,12 @@
     }
 
     .metric-box {
-      background: #F8FAFC;
+      background: var(--surface-subtle);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 14px;
       text-align: center;
+      min-width: 0;
     }
 
     .metric-box-val {
@@ -423,17 +715,18 @@
     /* 원문 근거 인용 카드 */
     .quote-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
       gap: 16px;
     }
 
     .quote-card {
-      background: #FFFFFF;
+      background: var(--card-bg);
       border: 1px solid var(--border);
       border-left: 3px solid var(--primary);
       border-radius: 8px;
       padding: 14px 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      box-shadow: var(--shadow-sm);
+      min-width: 0;
     }
 
     .quote-axis-tag {
@@ -443,17 +736,20 @@
       margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .quote-text {
       font-size: 0.88rem;
-      color: #334155;
+      color: var(--text-secondary);
       line-height: 1.5;
       font-style: italic;
-      background: #F8FAFC;
+      background: var(--surface-subtle);
       padding: 8px 10px;
       border-radius: 6px;
       margin-bottom: 6px;
+      overflow-wrap: anywhere;
     }
 
     .quote-reason {
@@ -474,8 +770,9 @@
       gap: 16px;
       margin-top: 20px;
       padding: 20px;
-      background: #F1F5F9;
+      background: var(--surface-muted);
       border-radius: var(--radius);
+      min-width: 0;
     }
 
     #shareCanvas {
@@ -483,14 +780,14 @@
       height: auto;
       border-radius: 12px;
       box-shadow: var(--shadow-lg);
-      background-color: #FFFFFF;
+      background-color: var(--canvas-bg);
     }
 
     /* PII 마스킹 미리보기 모달 / 토글 영역 */
     .pii-preview {
       margin-top: 16px;
       padding: 14px;
-      background: #F8FAFC;
+      background: var(--surface-subtle);
       border-radius: 8px;
       border: 1px solid var(--border);
       max-height: 200px;
@@ -498,35 +795,90 @@
       font-size: 0.8rem;
       font-family: monospace;
       white-space: pre-wrap;
-      color: #334155;
+      overflow-wrap: anywhere;
+      color: var(--text-secondary);
     }
 
     /* v2 티저 훅 */
-
     .v2-tag {
-      background: #FFFFFF;
-      color: #7E22CE;
+      background: var(--v2-tag-bg);
+      color: var(--v2-tag-text);
       font-size: 0.75rem;
       font-weight: 700;
       padding: 4px 10px;
       border-radius: 6px;
-      border: 1px solid #D8B4FE;
+      border: 1px solid var(--v2-tag-border);
     }
 
-    /* 반응형 */
+    /* 반응형 (640px 이하 / 375px 대응) */
     @media (max-width: 640px) {
-      h1 { font-size: 32px; line-height: 42px; letter-spacing: -0.02em; }
-      .card { padding: 20px; }
-      .mbti-type-badge { font-size: 2.3rem; }
+      body {
+        padding: 16px 12px 48px;
+      }
+      .container {
+        padding: 0;
+      }
+      header {
+        padding-top: 52px;
+      }
+      h1 {
+        font-size: 26px;
+        line-height: 36px;
+        letter-spacing: -0.02em;
+      }
+      .card {
+        padding: 18px 16px;
+      }
+      .mbti-type-badge {
+        font-size: 2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .v2-input-grid,
+      .settings-row,
+      .metric-grid,
+      .quote-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .notice-item {
+        flex-direction: column;
+        gap: 4px;
+      }
+      .notice-item strong {
+        white-space: normal;
+      }
+      .btn-row button {
+        flex: 1 1 100%;
+      }
+      .report-header,
+      .canvas-preview-container {
+        padding: 16px 12px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        transition: none !important;
+        animation: none !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <button id="themeToggle" type="button" data-mode="auto" aria-label="테마 전환 (현재: 자동, 누르면 라이트 모드로 변경)">테마: 자동</button>
     <!-- 서비스 헤더 -->
     <header>
       <div class="brand-name">지피지기 백전백승</div>
       <h1>대화에서 나의 성향을 알아보세요</h1>
+      <div class="hero-story">
+        <p class="hero-story-line">90년대부터 궁금한건, 대한민국에선 500원이었습니다.</p>
+        <p class="hero-story-catch">궁금해? 그럼 500원</p>
+        <p class="hero-story-note">지금은 무료 데모입니다. 실제 결제는 아직 열리지 않았습니다.</p>
+      </div>
       <p class="subtitle">카톡·지피티 대화를 붙여넣으면 개인정보를 자동으로 가리고, 대화 패턴·사주·자기보고를 나란히 비교한 리포트를 만들어 드립니다. 대화는 이 기기에서만 처리됩니다.</p>
     </header>
 
@@ -2937,15 +3289,15 @@ if (typeof document !== "undefined" && typeof document.addEventListener === "fun
       };
 
       container.innerHTML = `
-        <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px;">
+        <div style="background: var(--surface-muted); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 16px;">
           <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--primary); margin-bottom: 10px;">
             ${targetLabel} 심층 해석 (${type})
           </h4>
           ${(!mbti.isLack && PERSONA_ONE_LINER[mbti.rawType]) ? `
-          <div style="background: #EEF2FF; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.9rem; font-weight: 700; color: #3730A3;">
+          <div style="background: var(--primary-light); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.9rem; font-weight: 700; color: var(--primary);">
             한 줄 요약 — ${PERSONA_ONE_LINER[mbti.rawType]}
           </div>` : ""}
-          <div style="font-size: 0.88rem; color: #334155; line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 0.88rem; color: var(--text-main); line-height: 1.6; display: flex; flex-direction: column; gap: 10px;">
             ${axisLine(mbti.axisEI, "에너지 방향", "E", [
               `${targetLabel}는 대화 흐름을 주도하며 적극적으로 에너지를 교류할 때 활력을 얻습니다. 타 화자와의 협업 시 아이디어를 말로 풀며 발전시키는 스타일입니다.`,
               `${targetLabel}는 생각을 깊이 정리한 뒤 신중하게 의견을 표출하는 편입니다. 충분한 숙고 시간과 1:1 대화 환경에서 최상의 역량을 발휘합니다.`
