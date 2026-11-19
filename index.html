@@ -1085,7 +1085,7 @@
         </div>
         <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 14px;">
           <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
-            아래 "사주 · TCI 3소스 종합" 카드에서 명식 계산(사주 8자·오행·십성)과 TCI 착안 6영역 미니 자기보고를 바로 진행할 수 있습니다.
+            아래 "사주 · 기질·성격 자기보고(12문항) 3소스 종합" 카드에서 명식 계산(사주 8자·오행·십성)과 6영역 자기보고를 바로 진행할 수 있습니다.
           </p>
         </div>
       </section>
@@ -1093,10 +1093,10 @@
       <!-- v2: 사주 · TCI 3소스 종합 -->
       <section class="card" id="v2Section">
         <div class="card-title">
-          <span>사주 · TCI 3소스 종합 (v2)</span>
+          <span>사주 · 기질·성격 자기보고(12문항) 3소스 종합 (v2)</span>
         </div>
-        <button id="btnOneShot" class="btn-primary" style="width: 100%; margin-bottom: 12px;">한방에 전체 리포트 만들기 (대화 + 사주 + TCI)</button>
-        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 TCI식 미니 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기는 태양 황경 계산(±10분 내외)·시간대는 현행 KST 기준(역사적 시간대·진태양시 미적용). 양력·대한민국 현행 표준시 기준이며 1989년 이후 출생만 지원합니다. 절입 전후 10분은 계산을 보류합니다. 음력 날짜나 해외 출생 시각을 그대로 넣지 마세요. AI 프롬프트가 아닌 기기 내 계산·해석 규칙으로 작동합니다.</p>
+        <button id="btnOneShot" class="btn-primary" style="width: 100%; margin-bottom: 12px;">한방에 전체 리포트 만들기 (대화 + 사주 + 12문항 기질·성격 자기보고)</button>
+        <p style="font-size: 14px; line-height: 22px; color: var(--text-muted); margin-bottom: 16px;">1소스 대화 분석에 명식 계산(2소스)과 12문항 기질·성격 자기보고(3소스)를 더해 관점을 나란히 비교합니다. 사주는 전통 명리 관행을 규칙화한 것으로 과학적 검증은 아닙니다. 계산 한계: 절기는 태양 황경 계산(±10분 내외)·시간대는 현행 KST 기준(역사적 시간대·진태양시 미적용). 양력·대한민국 현행 표준시 기준이며 1989년 이후 출생만 지원합니다. 절입 전후 10분은 계산을 보류합니다. 음력 날짜나 해외 출생 시각을 그대로 넣지 마세요. AI 프롬프트가 아닌 기기 내 계산·해석 규칙으로 작동합니다.</p>
         <details id="birthDetails">
           <summary style="cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-main); padding: 6px 0;">출생정보 입력·변경</summary>
           <div class="v2-input-grid" style="margin-top: 10px;">
@@ -1159,7 +1159,7 @@
         <div id="daewunResult"></div>
         <div style="margin-top: 24px;">
           <div class="card-title" style="padding: 0; margin-bottom: 10px;">
-            <span>TCI식 미니 자기보고 (12문항 · 5점 척도)</span>
+            <span>기질·성격 자기보고 (12문항 · 5점 척도)</span>
           </div>
           <div id="tciQuestions"></div>
           <button id="btnTciSubmit" class="btn-primary">TCI 응답 완료</button>
@@ -2352,7 +2352,7 @@
             <li>관찰된 경향과 내가 아는 나 사이에 갈리는 곳은 어디인가? (갈림에는 해석 오류나 맥락 차이도 있을 수 있다)</li>
             <li>이번 주에 바꿔 볼 작은 규칙 하나는 무엇인가?</li>
           </ol>
-          <p style="font-size: 0.82rem; color: var(--text-muted);">완성된 답을 찾는 절차가 아니라 스스로 점검하는 질문이다${tci ? " — TCI식 응답과 겹쳐 보면 더 구체적이다" : ""}.</p>`
+          <p style="font-size: 0.82rem; color: var(--text-muted);">완성된 답을 찾는 절차가 아니라 스스로 점검하는 질문이다${tci ? " — 기질·성격 자기보고(12문항) 응답과 겹쳐 보면 더 구체적이다" : ""}.</p>`
       });
 
       sections.push({
@@ -2360,7 +2360,7 @@
         html: `
           <p style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">전략은 상징을 운명으로 받아들이는 데서 시작하지 않는다. 이 풀이에서 마음에 걸린 질문 하나를 고르고, 실제 경험 한 가지와 맞지 않았던 반례 한 가지를 함께 적어 보자. 행동의 선택권은 이 표가 아니라 본인에게 있다.</p>
           <p style="font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;">대화 기록을 한 달에 한 번 다시 불러와 비교하라. 대화의 주제·상대·기간이 다르면 결과도 달라질 수 있으니 가능한 한 비슷한 맥락끼리 비교하자. 이 도구는 원문을 저장하지 않으므로 필요한 기록은 본인이 보관해야 한다.</p>
-          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">한계 고지: 본 리포트는 전통 명리 관행과 규칙 기반 관찰을 조합한 자기이해 콘텐츠다. 공식 심리검사·의학적 진단·운세 확정이 아니고 과학적으로 검증된 검사도 아니며, 대운은 근사 절기 기반 추정치로 교체 시점을 예언하지 않으며 지장간·신강약·용신·정밀 역법은 계산하지 않는다${insightCount < 2 ? " — 대화 분석 또는 TCI 응답을 더하면 대조 절이 추가된다" : ""}.</p>`
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;">한계 고지: 본 리포트는 전통 명리 관행과 규칙 기반 관찰을 조합한 자기이해 콘텐츠다. 공식 심리검사(TCI 등)·의학적 진단·운세 확정이 아니고 과학적으로 검증된 검사도 아니며, 대운은 근사 절기 기반 추정치로 교체 시점을 예언하지 않으며 지장간·신강약·용신·정밀 역법은 계산하지 않는다${insightCount < 2 ? " — 대화 분석 또는 기질·성격 자기보고(12문항) 응답을 더하면 대조 절이 추가된다" : ""}.</p>`
       });
 
       return sections;
@@ -2451,13 +2451,13 @@
             openJegalReport();
             alert("전체 리포트가 준비됐습니다. 아래에서 단계별로 확인해주세요.");
           } else {
-            alert("대화와 TCI 분석이 완료됐습니다. 생년월일을 입력해 명식 계산을 진행하면 제갈량 리포트까지 완성됩니다.");
+            alert("대화와 기질·성격 자기보고(12문항) 분석이 완료됐습니다. 생년월일을 입력해 명식 계산을 진행하면 제갈량 리포트까지 완성됩니다.");
           }
         } else {
           oneShotPending = true;
           if (sajuDone) openJegalReport();
           const tr = document.getElementById("tciResult");
-          if (tr) tr.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted);\">TCI 12문항만 답하면 채점·3소스 비교가 자동으로 이어집니다" + (sajuDone ? "(사주 리포트는 지금 바로 아래에서 볼 수 있습니다)." : ".") + "</p>";
+          if (tr) tr.innerHTML = "<p style=\"font-size: 0.85rem; color: var(--text-muted);\">기질·성격 자기보고 12문항에 답하면 채점·3소스 비교가 자동으로 이어집니다" + (sajuDone ? "(사주 리포트는 지금 바로 아래에서 볼 수 있습니다)." : ".") + "</p>";
           if (!sajuDone) document.getElementById("tciQuestions").scrollIntoView({ behavior: "smooth" });
         }
       });
@@ -3046,7 +3046,7 @@ if (typeof document !== "undefined" && typeof document.addEventListener === "fun
           <span>${k}</span><span style="color: var(--text-muted);">${tci[k].score} — ${tci[k].label}</span>
         </div>`;
       });
-      html += "<p style=\"font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;\">자체 문항이라 공식 TCI 점수·백분위가 아니며, 정상/비정상 판정이 아닙니다.</p>";
+      html += "<p style=\"font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;\">자체 문항이라 공식 기질·성격검사(TCI 등) 점수·백분위가 아니며, 정상/비정상 판정이 아닙니다.</p>";
       box.innerHTML = html;
     }
 
@@ -3082,6 +3082,7 @@ if (typeof document !== "undefined" && typeof document.addEventListener === "fun
       catch (err) { v2State.saju = null; v2State.daewun = null; document.getElementById("sajuResult").textContent = err.message; document.getElementById("daewunResult").innerHTML = ""; alert(err.message); return false; }
       v2State.saju = sajuSummary(pillars);
       renderSaju(pillars);
+      if (!noTime && tv && (hour === 23 || hour === 0)) document.getElementById("sajuResult").insertAdjacentHTML("beforeend", '<div role="note" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 8px;">23:00~01:00(자시) 출생은 유파에 따라 일주가 다를 수 있어요. 이 앱은 0시 일자 경계로 계산합니다.</div>');
       const minuteOf = (!noTime && tv) ? parseInt(tv.split(":")[1], 10) : 0;
       const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value, hour, minuteOf);
       v2State.daewun = dw;
@@ -3184,6 +3185,7 @@ if (typeof document !== "undefined" && typeof document.addEventListener === "fun
           </details>
           <div style="font-size: 0.85rem; margin-top: 8px;"><strong>향후 10년 세운:</strong> ${yeonunRows}</div>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">절기는 태양 황경 계산(±10분 내외, ΔT·진태양시 미적용)이며 대운수·구간 해석은 관행적 프레임이고 확정 운세가 아닙니다.</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">1989년 이전 출생은 역사적 표준시·서머타임 보정이 없어 지원하지 않습니다.</p>
         </div>`;
     }
 
