@@ -768,6 +768,40 @@
             <button id="btnCalcSaju" class="btn-primary">명식 계산</button>
           </div>
         </details>
+<details id="jpjgPanel" style="margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:var(--radius-inner);">
+  <summary style="cursor:pointer; font-weight:600; min-height:44px; display:flex; align-items:center;">내 기록 저장·삭제</summary>
+  <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+    <label style="display:flex; align-items:center; gap:8px; min-height:44px; cursor:pointer;">
+      <input type="checkbox" id="jpjgConsentSave" />
+      <span>이 기기에 결과 저장</span>
+    </label>
+    <label style="display:flex; align-items:center; gap:8px; min-height:44px; padding-left:20px; cursor:pointer;">
+      <input type="checkbox" id="jpjgConsentBirth" disabled />
+      <span>출생 정보도 함께 저장</span>
+    </label>
+
+    <ul style="margin:0; padding-left:18px; color:var(--text-muted); font-size:0.9em; line-height:1.5;">
+      <li>대화 원문은 절대 저장하지 않습니다.</li>
+      <li>이 기기 브라우저에만 저장되며 서버로 가지 않습니다.</li>
+      <li>공용 기기에서는 켜지 마세요. 브라우저 데이터를 지우면 사라집니다.</li>
+    </ul>
+
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <button type="button" id="jpjgClearSaju" aria-label="저장된 사주 분석 기록 삭제" style="min-height:44px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-inner); background:transparent; color:inherit; cursor:pointer;">사주 삭제</button>
+      <button type="button" id="jpjgClearTci" aria-label="저장된 TCI 분석 기록 삭제" style="min-height:44px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-inner); background:transparent; color:inherit; cursor:pointer;">TCI 삭제</button>
+      <button type="button" id="jpjgClearMbti" aria-label="저장된 MBTI 분석 기록 삭제" style="min-height:44px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-inner); background:transparent; color:inherit; cursor:pointer;">MBTI 삭제</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <button type="button" id="jpjgClearAll" aria-label="저장된 분석 기록 전체 삭제, 결제 상태는 유지됨" style="min-height:44px; padding:0 12px; border:1px solid var(--border); border-radius:var(--radius-inner); background:transparent; color:inherit; cursor:pointer;">분석 기록 전체 삭제</button>
+      <span style="font-size:0.85em; color:var(--text-muted);">결제 상태는 유지됨</span>
+    </div>
+
+    <div id="jpjgStatus" role="status" aria-live="polite" style="font-size:0.9em; color:var(--text-muted); min-height:1.2em;"></div>
+    <div id="jpjgRestoredSaju" style="display:none; white-space:pre-line; padding:10px; border:1px solid var(--border); border-radius:var(--radius-inner); font-size:0.9em;"></div>
+    <div id="jpjgRestoredMbti" style="display:none; white-space:pre-line; padding:10px; border:1px solid var(--border); border-radius:var(--radius-inner); font-size:0.9em;"></div>
+  </div>
+</details>
         <p style="font-size: 12px; line-height: 18px; color: var(--text-muted); margin: 0 0 8px;">성별과 출생 시간을 입력하면 10년 단위 대운의 근사 구간을 계산합니다(전통 방식: 양년 남·음년 여 순행, 음년 남·양년 여 역행).</p>
         <div id="sajuResult"></div>
         <div id="daewunResult"></div>
@@ -2077,6 +2111,527 @@
     }
 
     const v2State = { saju: null, tci: null, mbti: null, daewun: null };
+/* JPJG_STORE_START */
+const JPJG_STORAGE_KEY = "jpjg_v1_state";
+const JPJG_SCHEMA_VERSION = 1;
+const JPJG_ENGINE_VERSION = "v2.1-termlong";
+const JPJG_SAVE_ERR_MSG = "저장하지 못했습니다. 이번 분석은 계속 사용할 수 있습니다.";
+const JPJG_VERSION_MISMATCH_MSG = "저장된 기록의 버전이 현재 분석 엔진과 달라 초기화했습니다.";
+const JPJG_ENGINE_LABELS = { saju: "사주", tci: "TCI", mbti: "MBTI" };
+
+let jpjgRestoring = false;
+let jpjgInitialized = false;
+let jpjgRestoredMbtiCache = null;
+let jpjgCachedTciAnswers = null;
+
+function jpjgById(id) {
+  if (typeof document === "undefined" || typeof document.getElementById !== "function") return null;
+  try {
+    return document.getElementById(id);
+  } catch (_) {
+    return null;
+  }
+}
+
+function jpjgSetStatus(msg) {
+  const el = jpjgById("jpjgStatus");
+  if (el) el.textContent = msg || "";
+}
+
+function jpjgGetConsent() {
+  const saveEl = jpjgById("jpjgConsentSave");
+  const birthEl = jpjgById("jpjgConsentBirth");
+  const save = Boolean(saveEl && saveEl.checked);
+  const birthInput = Boolean(save && birthEl && birthEl.checked);
+  return { save, birthInput };
+}
+
+function jpjgSafeClone(val) {
+  if (val === null || val === undefined) return null;
+  try {
+    return JSON.parse(JSON.stringify(val));
+  } catch (_) {
+    return null;
+  }
+}
+
+function jpjgPickAxis(ax) {
+  if (!ax || typeof ax !== "object") return null;
+  return {
+    dominant: typeof ax.dominant === "string" ? ax.dominant : "",
+    leftRatio: typeof ax.leftRatio === "number" && Number.isFinite(ax.leftRatio) ? ax.leftRatio : 0,
+    rightRatio: typeof ax.rightRatio === "number" && Number.isFinite(ax.rightRatio) ? ax.rightRatio : 0,
+    confidence: (typeof ax.confidence === "number" || typeof ax.confidence === "string") ? ax.confidence : "",
+    isLack: Boolean(ax.isLack)
+  };
+}
+
+function jpjgPickMbti(mbtiObj) {
+  if (!mbtiObj || typeof mbtiObj !== "object") return null;
+  const srcAxes = mbtiObj.axes && typeof mbtiObj.axes === "object" ? mbtiObj.axes : null;
+  const axes = {
+    EI: jpjgPickAxis(srcAxes ? srcAxes.EI : mbtiObj.axisEI),
+    SN: jpjgPickAxis(srcAxes ? srcAxes.SN : mbtiObj.axisSN),
+    TF: jpjgPickAxis(srcAxes ? srcAxes.TF : mbtiObj.axisTF),
+    JP: jpjgPickAxis(srcAxes ? srcAxes.JP : mbtiObj.axisJP)
+  };
+  return {
+    mbtiType: typeof mbtiObj.mbtiType === "string" ? mbtiObj.mbtiType : "",
+    isLack: Boolean(mbtiObj.isLack),
+    axes
+  };
+}
+
+function jpjgPickTciScores(tciObj) {
+  if (!tciObj || typeof tciObj !== "object") return null;
+  const out = {};
+  const keys = Object.keys(tciObj);
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const item = tciObj[k];
+    if (item && typeof item === "object") {
+      out[k] = {
+        score: typeof item.score === "number" && Number.isFinite(item.score) ? item.score : 0,
+        label: typeof item.label === "string" ? item.label : ""
+      };
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function jpjgPickBirthInput(inp) {
+  if (!inp || typeof inp !== "object") return null;
+  const birthDate = typeof inp.birthDate === "string" ? inp.birthDate : "";
+  if (!birthDate) return null;
+  return {
+    birthDate,
+    birthTime: typeof inp.birthTime === "string" ? inp.birthTime : "",
+    noTime: Boolean(inp.noTime),
+    gender: typeof inp.gender === "string" ? inp.gender : ""
+  };
+}
+
+function jpjgSerialize(state, consent, extra) {
+  const c = consent && typeof consent === "object"
+    ? { save: Boolean(consent.save), birthInput: Boolean(consent.save && consent.birthInput) }
+    : { save: false, birthInput: false };
+  if (!c.save) return null;
+
+  const st = state && typeof state === "object" ? state : {};
+  const ex = extra && typeof extra === "object" ? extra : {};
+
+  let saju = null;
+  if (st.saju || st.daewun) {
+    saju = {
+      summary: jpjgSafeClone(st.saju),
+      daewun: jpjgSafeClone(st.daewun),
+      birthY: (typeof st.birthY === "number" || typeof st.birthY === "string") ? st.birthY : null
+    };
+    if (c.birthInput) {
+      const cleanInput = jpjgPickBirthInput(ex.birthInput);
+      if (cleanInput) saju.input = cleanInput;
+    }
+  }
+
+  let tci = null;
+  const cleanTciScores = jpjgPickTciScores(st.tci);
+  if (cleanTciScores) {
+    const ans = Array.isArray(ex.tciAnswers)
+      ? ex.tciAnswers.slice(0, 12).map(function (n) { return Number(n); }).filter(function (n) { return Number.isFinite(n); })
+      : null;
+    tci = {
+      answers: ans && ans.length ? ans : null,
+      scores: cleanTciScores
+    };
+  }
+
+  const mbtiSource = st.mbti ? st.mbti : (ex.preservedMbti || null);
+  const mbti = jpjgPickMbti(mbtiSource);
+
+  return {
+    schemaVersion: JPJG_SCHEMA_VERSION,
+    engineVersion: JPJG_ENGINE_VERSION,
+    savedAt: typeof ex.savedAt === "string" ? ex.savedAt : new Date().toISOString(),
+    consent: { save: true, birthInput: c.birthInput },
+    saju,
+    tci,
+    mbti
+  };
+}
+
+function jpjgReadBirthInput() {
+  const dateEl = jpjgById("v2BirthDate");
+  const timeEl = jpjgById("v2BirthTime");
+  const noTimeEl = jpjgById("v2NoTime");
+  const genderEl = jpjgById("v2Gender");
+  if (!dateEl || !dateEl.value) return null;
+  return {
+    birthDate: String(dateEl.value),
+    birthTime: timeEl ? String(timeEl.value || "") : "",
+    noTime: Boolean(noTimeEl && noTimeEl.checked),
+    gender: genderEl ? String(genderEl.value || "") : ""
+  };
+}
+
+function jpjgReadTciAnswers() {
+  if (typeof document !== "undefined" && typeof document.querySelector === "function") {
+    const out = [];
+    for (let i = 0; i < 12; i++) {
+      try {
+        const checked = document.querySelector('input[name="tciq' + i + '"]:checked');
+        if (checked && checked.value !== undefined) {
+          const v = Number(checked.value);
+          if (Number.isFinite(v)) out.push(v);
+        }
+      } catch (_) {}
+    }
+    if (out.length === 12) {
+      jpjgCachedTciAnswers = out.slice();
+      return out;
+    }
+  }
+  return Array.isArray(jpjgCachedTciAnswers) ? jpjgCachedTciAnswers.slice() : null;
+}
+
+function jpjgFormatRatio(leftRatio, rightRatio) {
+  const l = Number(leftRatio) || 0;
+  const r = Number(rightRatio) || 0;
+  const scale = (l + r > 0 && l + r <= 1.01) ? 100 : 1;
+  return Math.round(l * scale) + "% / " + Math.round(r * scale) + "%";
+}
+
+function jpjgRenderRestoredMbti(mbtiData) {
+  const box = jpjgById("jpjgRestoredMbti");
+  if (!box) return;
+  if (!mbtiData) {
+    box.textContent = "";
+    if (box.style) box.style.display = "none";
+    return;
+  }
+  const lines = [
+    "[저장된 MBTI 요약 - 대화 원문 미저장]",
+    "유형: " + (mbtiData.mbtiType || "-") + (mbtiData.isLack ? " (표본 부족)" : "")
+  ];
+  const order = ["EI", "SN", "TF", "JP"];
+  for (let i = 0; i < order.length; i++) {
+    const key = order[i];
+    const ax = mbtiData.axes && mbtiData.axes[key];
+    if (ax) {
+      lines.push(
+        key + ": " + (ax.dominant || "-") +
+        " (" + jpjgFormatRatio(ax.leftRatio, ax.rightRatio) +
+        ", 신뢰도 " + (ax.confidence !== "" ? ax.confidence : "-") +
+        (ax.isLack ? ", 표본 부족" : "") + ")"
+      );
+    }
+  }
+  box.textContent = lines.join("\n");
+  if (box.style) box.style.display = "block";
+}
+
+function jpjgRenderRestoredSaju(sajuData) {
+  const box = jpjgById("jpjgRestoredSaju");
+  if (!box) return;
+  if (!sajuData) {
+    box.textContent = "";
+    if (box.style) box.style.display = "none";
+    return;
+  }
+  const lines = ["[저장된 사주 요약 - 출생 입력 미저장]"];
+  if (sajuData.birthY !== null && sajuData.birthY !== undefined && sajuData.birthY !== "") {
+    lines.push("출생연도: " + sajuData.birthY);
+  }
+  if (typeof sajuData.summary === "string") {
+    lines.push(sajuData.summary);
+  } else if (sajuData.summary && typeof sajuData.summary === "object") {
+    const keys = Object.keys(sajuData.summary);
+    const parts = [];
+    for (let i = 0; i < keys.length; i++) {
+      const val = sajuData.summary[keys[i]];
+      if (typeof val === "string" || typeof val === "number") {
+        parts.push(keys[i] + ": " + val);
+      }
+    }
+    if (parts.length) lines.push(parts.slice(0, 6).join(" · "));
+  }
+  if (sajuData.daewun) {
+    lines.push("대운 정보: 저장됨");
+  }
+  box.textContent = lines.join("\n");
+  if (box.style) box.style.display = "block";
+}
+
+const jpjgSuppress = { saju: false, tci: false, mbti: false };
+
+function jpjgSave(engine) {
+  if (jpjgRestoring) return false;
+  if (engine === "saju" || engine === "tci" || engine === "mbti") {
+    jpjgSuppress[engine] = false;
+  }
+  const consent = jpjgGetConsent();
+  if (!consent.save) return false;
+
+  const stateRef = typeof v2State !== "undefined" ? v2State : {};
+  const filteredState = {
+    saju: jpjgSuppress.saju ? null : stateRef.saju,
+    daewun: jpjgSuppress.saju ? null : stateRef.daewun,
+    birthY: jpjgSuppress.saju ? null : stateRef.birthY,
+    tci: jpjgSuppress.tci ? null : stateRef.tci,
+    mbti: jpjgSuppress.mbti ? null : stateRef.mbti
+  };
+  const payload = jpjgSerialize(filteredState, consent, {
+    birthInput: (!jpjgSuppress.saju && consent.birthInput) ? jpjgReadBirthInput() : null,
+    tciAnswers: jpjgSuppress.tci ? null : jpjgReadTciAnswers(),
+    preservedMbti: jpjgSuppress.mbti ? null : jpjgRestoredMbtiCache
+  });
+  if (!payload) return false;
+
+  try {
+    if (typeof localStorage === "undefined" || !localStorage) throw new Error("no storage");
+    localStorage.setItem(JPJG_STORAGE_KEY, JSON.stringify(payload));
+    if (payload.mbti) jpjgRestoredMbtiCache = payload.mbti;
+    jpjgSetStatus("이 기기에 분석 결과를 저장했습니다.");
+    return true;
+  } catch (_) {
+    jpjgSetStatus(JPJG_SAVE_ERR_MSG);
+    return false;
+  }
+}
+
+function jpjgClearEngine(name, silent) {
+  if (name !== "saju" && name !== "tci" && name !== "mbti") return false;
+  if (!silent) jpjgSuppress[name] = true;
+
+  if (name === "saju") {
+    jpjgRenderRestoredSaju(null);
+  } else if (name === "tci") {
+    jpjgCachedTciAnswers = null;
+  } else if (name === "mbti") {
+    jpjgRestoredMbtiCache = null;
+    jpjgRenderRestoredMbti(null);
+  }
+
+  const loaded = jpjgLoad();
+  if (!loaded.ok || !loaded.data) {
+    if (!silent && loaded.message) jpjgSetStatus(loaded.message);
+    return false;
+  }
+
+  const hadValue = loaded.data[name] !== null && loaded.data[name] !== undefined;
+  loaded.data[name] = null;
+  loaded.data.savedAt = new Date().toISOString();
+
+  try {
+    localStorage.setItem(JPJG_STORAGE_KEY, JSON.stringify(loaded.data));
+    if (!silent && hadValue) {
+      jpjgSetStatus(JPJG_ENGINE_LABELS[name] + " 저장 기록을 삭제했습니다.");
+    }
+    return true;
+  } catch (_) {
+    jpjgSetStatus(JPJG_SAVE_ERR_MSG);
+    return false;
+  }
+}
+
+function jpjgClearAll(keepFlags) {
+  if (!keepFlags) {
+    jpjgSuppress.saju = true;
+    jpjgSuppress.tci = true;
+    jpjgSuppress.mbti = true;
+  }
+  jpjgRestoredMbtiCache = null;
+  jpjgCachedTciAnswers = null;
+  jpjgRenderRestoredMbti(null);
+  jpjgRenderRestoredSaju(null);
+
+  try {
+    if (typeof localStorage === "undefined" || !localStorage) throw new Error("no storage");
+    localStorage.removeItem(JPJG_STORAGE_KEY);
+    jpjgSetStatus("분석 기록을 전체 삭제했습니다. 결제 상태는 유지됩니다.");
+    return true;
+  } catch (_) {
+    jpjgSetStatus(JPJG_SAVE_ERR_MSG);
+    return false;
+  }
+}
+
+function jpjgRestore() {
+  jpjgSuppress.saju = false;
+  jpjgSuppress.tci = false;
+  jpjgSuppress.mbti = false;
+
+  const saveEl = jpjgById("jpjgConsentSave");
+  const birthEl = jpjgById("jpjgConsentBirth");
+  const loaded = jpjgLoad();
+
+  if (!loaded.ok || !loaded.data) {
+    if (saveEl) saveEl.checked = false;
+    if (birthEl) {
+      birthEl.checked = false;
+      birthEl.disabled = true;
+    }
+    if (loaded.message) jpjgSetStatus(loaded.message);
+    return false;
+  }
+
+  const data = loaded.data;
+  if (!data.consent || !data.consent.save) return false;
+
+  if (saveEl) saveEl.checked = true;
+  if (birthEl) {
+    birthEl.disabled = false;
+    birthEl.checked = Boolean(data.consent.birthInput);
+  }
+
+  jpjgRestoring = true;
+  try {
+    const stateRef = typeof v2State !== "undefined" ? v2State : null;
+
+    if (data.saju) {
+      if (data.saju.input && data.saju.input.birthDate) {
+        const dateEl = jpjgById("v2BirthDate");
+        const timeEl = jpjgById("v2BirthTime");
+        const noTimeEl = jpjgById("v2NoTime");
+        const genderEl = jpjgById("v2Gender");
+        if (dateEl) dateEl.value = data.saju.input.birthDate;
+        if (timeEl) timeEl.value = data.saju.input.birthTime || "";
+        if (noTimeEl) noTimeEl.checked = Boolean(data.saju.input.noTime);
+        if (genderEl && data.saju.input.gender) genderEl.value = data.saju.input.gender;
+        if (typeof calcSajuFromInputs === "function") {
+          try { calcSajuFromInputs(); } catch (_) {}
+        }
+      } else {
+        if (stateRef) {
+          stateRef.saju = jpjgSafeClone(data.saju.summary);
+          stateRef.daewun = jpjgSafeClone(data.saju.daewun);
+          stateRef.birthY = data.saju.birthY !== undefined ? data.saju.birthY : null;
+        }
+        jpjgRenderRestoredSaju(data.saju);
+      }
+    }
+
+    if (data.tci && Array.isArray(data.tci.answers) && data.tci.answers.length) {
+      jpjgCachedTciAnswers = data.tci.answers.slice();
+      if (typeof document !== "undefined" && typeof document.querySelector === "function") {
+        for (let i = 0; i < data.tci.answers.length; i++) {
+          try {
+            const radio = document.querySelector('input[name="tciq' + i + '"][value="' + data.tci.answers[i] + '"]');
+            if (radio) radio.checked = true;
+          } catch (_) {}
+        }
+      }
+      if (typeof submitTci === "function") {
+        try { submitTci(); } catch (_) {}
+      }
+    }
+
+    if (data.mbti) {
+      jpjgRestoredMbtiCache = jpjgPickMbti(data.mbti);
+      jpjgRenderRestoredMbti(jpjgRestoredMbtiCache);
+    }
+
+    jpjgSetStatus("이 기기에 저장된 분석 기록을 불러왔습니다.");
+    return true;
+  } finally {
+    jpjgRestoring = false;
+  }
+}
+
+
+function jpjgLoad() {
+  let raw = null;
+  try {
+    if (typeof localStorage === "undefined" || !localStorage) throw new Error("no storage");
+    raw = localStorage.getItem(JPJG_STORAGE_KEY);
+  } catch (_) {
+    jpjgSetStatus(JPJG_SAVE_ERR_MSG);
+    return { ok: false, data: null, message: JPJG_SAVE_ERR_MSG };
+  }
+
+  if (!raw) return { ok: false, data: null, message: "" };
+
+  let parsed = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (_) {
+    try { localStorage.removeItem(JPJG_STORAGE_KEY); } catch (__) {}
+    return { ok: false, data: null, message: JPJG_VERSION_MISMATCH_MSG };
+  }
+
+  const invalid = !parsed || typeof parsed !== "object" ||
+    parsed.schemaVersion !== JPJG_SCHEMA_VERSION ||
+    parsed.engineVersion !== JPJG_ENGINE_VERSION;
+
+  if (invalid) {
+    try { localStorage.removeItem(JPJG_STORAGE_KEY); } catch (_) {}
+    return { ok: false, data: null, message: JPJG_VERSION_MISMATCH_MSG };
+  }
+
+  return { ok: true, data: parsed, message: "" };
+}
+
+function jpjgInit() {
+  if (jpjgInitialized) return;
+  jpjgInitialized = true;
+
+  const saveEl = jpjgById("jpjgConsentSave");
+  const birthEl = jpjgById("jpjgConsentBirth");
+
+  if (saveEl && typeof saveEl.addEventListener === "function") {
+    saveEl.addEventListener("change", function () {
+      if (birthEl) birthEl.disabled = !saveEl.checked;
+      if (!saveEl.checked) {
+        if (birthEl) birthEl.checked = false;
+        jpjgClearAll(true);
+      } else {
+        jpjgSave();
+      }
+    });
+  }
+
+  if (birthEl && typeof birthEl.addEventListener === "function") {
+    birthEl.addEventListener("change", function () {
+      if (saveEl && saveEl.checked) jpjgSave();
+    });
+  }
+
+  const clearBindings = [
+    ["jpjgClearSaju", function () { jpjgClearEngine("saju"); }],
+    ["jpjgClearTci", function () { jpjgClearEngine("tci"); }],
+    ["jpjgClearMbti", function () { jpjgClearEngine("mbti"); }],
+    ["jpjgClearAll", function () { jpjgClearAll(); }]
+  ];
+  for (let i = 0; i < clearBindings.length; i++) {
+    const btn = jpjgById(clearBindings[i][0]);
+    if (btn && typeof btn.addEventListener === "function") {
+      btn.addEventListener("click", clearBindings[i][1]);
+    }
+  }
+
+  const birthIds = ["v2BirthDate", "v2BirthTime", "v2NoTime", "v2Gender"];
+  const onBirthInputChange = function () {
+    if (jpjgRestoring) return;
+    jpjgClearEngine("saju", true);
+  };
+  for (let i = 0; i < birthIds.length; i++) {
+    const inp = jpjgById(birthIds[i]);
+    if (inp && typeof inp.addEventListener === "function") {
+      inp.addEventListener("change", onBirthInputChange);
+      inp.addEventListener("input", onBirthInputChange);
+    }
+  }
+
+  jpjgRestore();
+}
+
+if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", jpjgInit);
+  } else {
+    jpjgInit();
+  }
+}
+/* JPJG_STORE_END */
     function invalidateBirthResults() {
       v2State.saju = null; v2State.daewun = null; v2State.birthY = null;
       jegalState.sections = null; jegalState.shown = 0;
@@ -2178,7 +2733,7 @@
       const dw = calcDaewun(pillars, parts[0], parts[1], parts[2], document.getElementById("v2Gender").value, hour, minuteOf);
       v2State.daewun = dw;
       v2State.birthY = parts[0];
-      renderDaewun(dw, parts[0]);
+      renderDaewun(dw, parts[0]); if (typeof jpjgSave === 'function') jpjgSave('saju');
       renderFusionIfReady();
       // 계산 완료 후 출생정보 접기 + 캔버스가 이미 렌더돼 있으면 갱신
       const bd = document.getElementById("birthDetails");
@@ -2296,7 +2851,7 @@
         answers.push(Number(sel.value));
       }
       v2State.tci = tciScore(answers);
-      renderTci(v2State.tci);
+      renderTci(v2State.tci); if (typeof jpjgSave === 'function') jpjgSave('tci');
       renderFusionIfReady();
       return true;
     }
@@ -2769,7 +3324,7 @@
       // 6. 심층 MBTI 해석 & 소통 전략 (무료 제공)
       renderDeepMbtiAnalysis(document.getElementById("deepAnalysisFreeBox"), mbti);
       document.getElementById("deepAnalysisSection").style.display = "block";
-      v2State.mbti = mbti;
+      v2State.mbti = mbti; if (typeof jpjgSave === 'function') jpjgSave('mbti');
       renderFusionIfReady();
 
       // 스크롤 이동
